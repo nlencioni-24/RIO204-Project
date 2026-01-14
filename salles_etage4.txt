@@ -1,0 +1,319 @@
+{
+  "id": 1067,
+  "nom": "4A101 Réunion (4A101)",
+  "text": "4A101 Réunion (4A101)",
+  "site": "Télécom Paris - Palaiseau",
+  "batiment": "Saclay",
+  "type": "Salle de réunion",
+  "entites": "SG/ImLog",
+  "capacite": 20,
+  "accessibilite": true,
+  "entitesIds": [
+    55
+  ],
+  "breservablefo": true,
+  "baccesrestreint": false
+}
+{
+  "id": 1098,
+  "nom": "4A113 cours configurable (4A113)",
+  "text": "4A113 cours configurable (4A113)",
+  "site": "Télécom Paris - Palaiseau",
+  "batiment": "Saclay",
+  "type": "Salle de cours",
+  "entites": "DE, DE/LC, SG/ImLog, TEV-BGD IA, FC-FL, Rch, DE-dep",
+  "capacite": 20,
+  "accessibilite": true,
+  "entitesIds": [
+    39,
+    58,
+    55,
+    119,
+    110,
+    37,
+    126
+  ],
+  "breservablefo": true,
+  "baccesrestreint": false
+}
+{
+  "id": 1143,
+  "nom": "4A120 Visioconférence (Petite) (4A120)",
+  "text": "4A120 Visioconférence (Petite) (4A120)",
+  "site": "Télécom Paris - Palaiseau",
+  "batiment": "Saclay",
+  "type": "Salle de réunion",
+  "entites": "DSI",
+  "capacite": 12,
+  "accessibilite": true,
+  "entitesIds": [
+    54
+  ],
+  "breservablefo": true,
+  "baccesrestreint": false
+}
+{
+  "id": 1099,
+  "nom": "4A125 cours configurable (4A125)",
+  "text": "4A125 cours configurable (4A125)",
+  "site": "Télécom Paris - Palaiseau",
+  "batiment": "Saclay",
+  "type": "Salle de cours",
+  "entites": "SG/ImLog, DE, DE-dep, DE/LC, FC-FL, TEV-BGD IA",
+  "capacite": 30,
+  "accessibilite": true,
+  "entitesIds": [
+    55,
+    39,
+    126,
+    58,
+    110,
+    119
+  ],
+  "breservablefo": true,
+  "baccesrestreint": false
+}
+{
+  "id": 1144,
+  "nom": "4A129 Visioconférence (Grande) (4A129)",
+  "text": "4A129 Visioconférence (Grande) (4A129)",
+  "site": "Télécom Paris - Palaiseau",
+  "batiment": "Saclay",
+  "type": "Salle de réunion",
+  "entites": "DSI",
+  "capacite": 14,
+  "accessibilite": true,
+  "entitesIds": [
+    54
+  ],
+  "breservablefo": true,
+  "baccesrestreint": false
+}
+{
+  "id": 1236,
+  "nom": "4A205 cours (4A205)",
+  "text": "4A205 cours (4A205)",
+  "site": "Télécom Paris - Palaiseau",
+  "batiment": "Saclay",
+  "type": "Salle de cours",
+  "entites": "TEV-BGD IA, FC-FL, DE/LC, DE-dep, Rch, SG/ImLog, SG/Log-Bat, SG/Log-Ges, SG/Log-Log, SG/Log-Rep, TSP-Scol",
+  "capacite": 16,
+  "accessibilite": false,
+  "entitesIds": [
+    119,
+    110,
+    58,
+    126,
+    37,
+    55,
+    60,
+    23,
+    59,
+    56,
+    123
+  ],
+  "breservablefo": true,
+  "baccesrestreint": false
+}
+{
+  "id": 1145,
+  "nom": "4A222 Visioconférence (Moyenne) (4A222)",
+  "text": "4A222 Visioconférence (Moyenne) (4A222)",
+  "site": "Télécom Paris - Palaiseau",
+  "batiment": "Saclay",
+  "type": "Salle de réunion",
+  "entites": "DSI",
+  "capacite": 14,
+  "accessibilite": true,
+  "entitesIds": [
+    54
+  ],
+  "breservablefo": true,
+  "baccesrestreint": false
+}
+{
+  "id": 1072,
+  "nom": "4A301 Réunion (4A301)",
+  "text": "4A301 Réunion (4A301)",
+  "site": "Télécom Paris - Palaiseau",
+  "batiment": "Saclay",
+  "type": "Salle de réunion",
+  "entites": "SG/ImLog",
+  "capacite": 24,
+  "accessibilite": true,
+  "entitesIds": [
+    55
+  ],
+  "breservablefo": true,
+  "baccesrestreint": false
+}
+{
+  "id": 1071,
+  "nom": "4A305 Réunion (4A305)",
+  "text": "4A305 Réunion (4A305)",
+  "site": "Télécom Paris - Palaiseau",
+  "batiment": "Saclay",
+  "type": "Salle de réunion",
+  "entites": "SG/ImLog",
+  "capacite": 8,
+  "accessibilite": true,
+  "entitesIds": [
+    55
+  ],
+  "breservablefo": true,
+  "baccesrestreint": false
+}
+{
+  "id": 1237,
+  "nom": "4A312 cours (4A312)",
+  "text": "4A312 cours (4A312)",
+  "site": "Télécom Paris - Palaiseau",
+  "batiment": "Saclay",
+  "type": "Salle de cours",
+  "entites": "TEV-BGD IA, FC-FL, DE/LC, DE-dep, Rch, SG/ImLog, SG/Log-Bat, SG/Log-Ges, SG/Log-Log, SG/Log-Rep, TSP-Scol",
+  "capacite": 16,
+  "accessibilite": false,
+  "entitesIds": [
+    119,
+    110,
+    58,
+    126,
+    37,
+    55,
+    60,
+    23,
+    59,
+    56,
+    123
+  ],
+  "breservablefo": true,
+  "baccesrestreint": false
+}
+{
+  "id": 1073,
+  "nom": "4A401 Réunion (4A401)",
+  "text": "4A401 Réunion (4A401)",
+  "site": "Télécom Paris - Palaiseau",
+  "batiment": "Saclay",
+  "type": "Salle de réunion",
+  "entites": "SG/ImLog",
+  "capacite": 10,
+  "accessibilite": true,
+  "entitesIds": [
+    55
+  ],
+  "breservablefo": true,
+  "baccesrestreint": false
+}
+{
+  "id": 1165,
+  "nom": "4A467 Visioconférence (Moyenne) (4A467)",
+  "text": "4A467 Visioconférence (Moyenne) (4A467)",
+  "site": "Télécom Paris - Palaiseau",
+  "batiment": "Saclay",
+  "type": "Salle de réunion",
+  "entites": "DSI",
+  "capacite": 14,
+  "accessibilite": true,
+  "entitesIds": [
+    54
+  ],
+  "breservablefo": true,
+  "baccesrestreint": false
+}
+{
+  "id": 1069,
+  "nom": "4A485 Réunion (4A485)",
+  "text": "4A485 Réunion (4A485)",
+  "site": "Télécom Paris - Palaiseau",
+  "batiment": "Saclay",
+  "type": "Salle de réunion",
+  "entites": "SG/ImLog",
+  "capacite": 16,
+  "accessibilite": true,
+  "entitesIds": [
+    55
+  ],
+  "breservablefo": true,
+  "baccesrestreint": false
+}
+{
+  "id": 1129,
+  "nom": "4B01 TP INFRES (4B01)",
+  "text": "4B01 TP INFRES (4B01)",
+  "site": "Télécom Paris - Palaiseau",
+  "batiment": "Saclay",
+  "type": "Salle de TP",
+  "entites": "INFRES",
+  "capacite": 44,
+  "accessibilite": true,
+  "entitesIds": [
+    48
+  ],
+  "breservablefo": true,
+  "baccesrestreint": false
+}
+{
+  "id": 1074,
+  "nom": "4B26 Réunion (4B26)",
+  "text": "4B26 Réunion (4B26)",
+  "site": "Télécom Paris - Palaiseau",
+  "batiment": "Saclay",
+  "type": "Salle de réunion",
+  "entites": "SG/ImLog",
+  "capacite": 8,
+  "accessibilite": true,
+  "entitesIds": [
+    55
+  ],
+  "breservablefo": true,
+  "baccesrestreint": false
+}
+{
+  "id": 1076,
+  "nom": "4C38 Réunion (4C38)",
+  "text": "4C38 Réunion (4C38)",
+  "site": "Télécom Paris - Palaiseau",
+  "batiment": "Saclay",
+  "type": "Salle de réunion",
+  "entites": "SG/ImLog",
+  "capacite": 8,
+  "accessibilite": true,
+  "entitesIds": [
+    55
+  ],
+  "breservablefo": true,
+  "baccesrestreint": false
+}
+{
+  "id": 1079,
+  "nom": "4D19 Réunion (4D19)",
+  "text": "4D19 Réunion (4D19)",
+  "site": "Télécom Paris - Palaiseau",
+  "batiment": "Saclay",
+  "type": "Salle de réunion",
+  "entites": "SG/ImLog",
+  "capacite": 16,
+  "accessibilite": true,
+  "entitesIds": [
+    55
+  ],
+  "breservablefo": true,
+  "baccesrestreint": false
+}
+{
+  "id": 1080,
+  "nom": "4D35 Réunion (4D35)",
+  "text": "4D35 Réunion (4D35)",
+  "site": "Télécom Paris - Palaiseau",
+  "batiment": "Saclay",
+  "type": "Salle de réunion",
+  "entites": "SG/ImLog",
+  "capacite": 8,
+  "accessibilite": true,
+  "entitesIds": [
+    55
+  ],
+  "breservablefo": true,
+  "baccesrestreint": false
+}
