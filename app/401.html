@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Room 401</title>
+<style>
+body{margin:0;font-family:Arial,Helvetica,sans-serif;background:#f4f6f8}
+header{background:white;padding:14px 20px;border-bottom:1px solid #ddd;display:flex;align-items:center;gap:12px}
+.back-btn{cursor:pointer;font-size:18px}
+.content{max-width:600px;margin:auto;padding:20px}
+.card{background:white;border-radius:10px;padding:20px}
+.row{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #eee}
+.row:last-child{border-bottom:none}
+.free{color:#2ecc71;font-weight:bold}
+.partial{color:#f39c12;font-weight:bold}
+.occupied{color:#e74c3c;font-weight:bold}
+.buttons{margin-top:20px;display:grid;gap:12px}
+button{padding:12px;border-radius:8px;border:none;cursor:pointer;font-size:15px}
+.contribute{background:#3498db;color:white}
+.favorite{background:#ecf0f1}
+header h1 {
+  flex: 1;               /* prend tout l’espace restant */
+  text-align: center;    /* centre uniquement le titre */
+  margin: 0;             /* supprime les marges par défaut */
+}
+
+</style>
+</head>
+<body>
+
+<header>
+  <div class="back-btn" onclick="goHome()">⬅</div>
+  <h1>Room 401 – 4th Floor</h1>
+</header>
+
+<div class="content">
+  <div class="card">
+    <div class="row"><span>Availability</span><span id="availability">🟢 Free</span></div>
+    <div class="row"><span>Estimated occupancy</span><span id="occupancy">0 people</span></div>
+    <div class="row"><span>Temperature</span><span id="temperature">21°C</span></div>
+    <div class="row"><span>Humidity</span><span id="humidity">45%</span></div>
+    <div class="row"><span>Light</span><span>Good</span></div>
+    <div class="row"><span>Windows</span><span>Closed</span></div>
+    <div class="row"><span>AC / Heating</span><span>No</span></div>
+  </div>
+
+  <div class="buttons">
+    <button class="contribute">I am in this room</button>
+    <button class="favorite">⭐ Mark favorite / Go there</button>
+  </div>
+</div>
+
+<script src="sensors.js"></script>
+<script>
+function goHome(){window.location.href='index.html'}
+
+function updateRoomValues(){
+  const sensor = sensorData["401"];
+  if(!sensor) return;
+
+  const availabilityElem = document.getElementById('availability');
+  const occupancyElem = document.getElementById('occupancy');
+  const tempElem = document.getElementById('temperature');
+  const humElem = document.getElementById('humidity');
+
+  // Disponibilité selon occupancy
+  if(sensor.occupancy===0){
+    availabilityElem.textContent="🟢 Free";
+    availabilityElem.className="free";
+  } else if(sensor.occupancy<=20){
+    availabilityElem.textContent="🟠 Partial";
+    availabilityElem.className="partial";
+  } else {
+    availabilityElem.textContent="🔴 Occupied";
+    availabilityElem.className="occupied";
+  }
+
+  occupancyElem.textContent=sensor.occupancy+" people";
+  tempElem.textContent=sensor.temperature+"°C";
+  humElem.textContent=sensor.humidity+"%";
+}
+
+setInterval(updateRoomValues,5000);
+updateRoomValues();
+</script>
+
+</body>
+</html>
