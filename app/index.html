@@ -4,110 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Study Room Management</title>
-  <style>
-    :root {
-      --green: #2ecc71;
-      --red: #e74c3c;
-      --orange: #f39c12;
-      --gray: #f4f6f8;
-      --dark: #2c3e50;
-    }
-
-    * { box-sizing: border-box; font-family: Arial, Helvetica, sans-serif; }
-
-    body {
-      margin: 0;
-      background: var(--gray);
-      color: var(--dark);
-    }
-
-    /* Header */
-    header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 12px 20px;
-      background: white;
-      border-bottom: 1px solid #ddd;
-      position: relative;
-      z-index: 1100;
-    }
-
-    header h1 { font-size: 18px; margin: 0; }
-    .menu-btn {
-      font-size: 22px;
-      cursor: pointer;
-      user-select: none;
-      z-index: 1100;
-    }
-
-    /* Layout */
-    .container { display: grid; grid-template-columns: 1fr; gap: 16px; padding: 16px; }
-
-    /* Filters */
-    .filters {
-      background: white;
-      padding: 12px;
-      border-radius: 8px;
-    }
-
-    .filters input, .filters select {
-      margin: 6px 0;
-      width: 100%;
-      padding: 8px;
-    }
-
-    /* Rooms */
-    .rooms { display: grid; gap: 12px; }
-
-    .room-card {
-      background: white;
-      padding: 12px 16px;
-      border-radius: 8px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-
-    .status { font-weight: bold; }
-    .free { color: var(--green); }
-    .occupied { color: var(--red); }
-    .partial { color: var(--orange); }
-
-    /* Side Menu */
-    .side-menu {
-      position: fixed;
-      top: 0;
-      right: -260px;
-      width: 250px;
-      height: 100%;
-      background: white;
-      border-left: 1px solid #ddd;
-      padding: 20px;
-      transition: right 0.3s ease;
-      z-index: 1000;
-    }
-
-    .side-menu.active { right: 0; }
-
-    .side-menu h2 { margin-top: 0; }
-
-    .side-menu ul { list-style: none; padding: 0; }
-    .side-menu li { padding: 10px 0; border-bottom: 1px solid #eee; cursor: pointer; }
-
-    button {
-      padding: 8px 12px;
-      border-radius: 6px;
-      border: none;
-      cursor: pointer;
-      background: #3498db;
-      color: white;
-    }
-
-    @media (min-width: 768px) {
-      .container { grid-template-columns: 300px 1fr; }
-    }
-  </style>
+  <link rel="stylesheet" href="src/style.css" />
 </head>
 <body>
 
@@ -195,7 +92,7 @@
 </div>
 
 <!-- Sensors Data -->
-<script src="sensors.js"></script> <!-- fichier externe avec sensorData -->
+<script src="src/sensors.js"></script> <!-- fichier externe avec sensorData -->
 
 <script>
   // Menu toggle

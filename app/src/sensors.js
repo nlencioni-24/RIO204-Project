@@ -1,6 +1,6 @@
 // sensors.js
 // Données simulées pour toutes les salles
-const sensorData = {
+window.sensorData = {
   "401": { temperature: 21, humidity: 45, occupancy: 0 },
   "402": { temperature: 24, humidity: 55, occupancy: 10 },
   "403": { temperature: 22, humidity: 50, occupancy: 5 }
