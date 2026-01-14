@@ -1,13 +1,274 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>app</title>
-  </head>
-  <body>
-    <div id="app"></div>
-    <script type="module" src="/src/main.js"></script>
-  </body>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Study Room Management</title>
+  <link rel="stylesheet" href="index.css">
+  <style>
+
+      :root {
+      --green: #2ecc71;
+      --red: #e74c3c;
+      --orange: #f39c12;
+      --gray: #f4f6f8;
+      --dark: #2c3e50;
+      }
+
+      * { box-sizing: border-box; font-family: Arial, Helvetica, sans-serif; }
+
+      body {
+      margin: 0;
+      background: var(--gray);
+      color: var(--dark);
+      }
+
+      /* Header */
+      header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 20px;
+      background: white;
+      border-bottom: 1px solid #ddd;
+      position: relative;
+      z-index: 1100; /* pour rester au-dessus du menu */
+      }
+
+      header h1 {
+      font-size: 18px;
+      margin: 0;
+      }
+
+      .menu-btn {
+      font-size: 22px;
+      cursor: pointer;
+      user-select: none;
+      z-index: 1100; /* bouton toujours cliquable */
+      }
+
+      /* Layout */
+      .container {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 16px;
+      padding: 16px;
+      }
+
+      /* Filters */
+      .filters {
+      background: white;
+      padding: 12px;
+      border-radius: 8px;
+      }
+
+      .filters input, .filters select {
+      margin: 6px 0;
+      width: 100%;
+      padding: 8px;
+      }
+
+      /* Rooms */
+      .rooms {
+      display: grid;
+      gap: 12px;
+      }
+
+      .room-card {
+      background: white;
+      padding: 12px 16px;
+      border-radius: 8px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      }
+
+      .status {
+      font-weight: bold;
+      }
+
+      .free { color: var(--green); }
+      .occupied { color: var(--red); }
+      .partial { color: var(--orange); }
+
+      /* Side Menu */
+      .side-menu {
+      position: fixed;
+      top: 0;
+      right: -260px;
+      width: 250px;
+      height: 100%;
+      background: white;
+      border-left: 1px solid #ddd;
+      padding: 20px;
+      transition: right 0.3s ease;
+      z-index: 1000; /* en dessous du header */
+      }
+
+      .side-menu.active { right: 0; }
+
+      .side-menu h2 { margin-top: 0; }
+
+      .side-menu ul { list-style: none; padding: 0; }
+
+      .side-menu li {
+      padding: 10px 0;
+      border-bottom: 1px solid #eee;
+      cursor: pointer;
+      }
+
+      button {
+          padding: 8px 12px;
+          border-radius: 6px;
+          border: none;
+          cursor: pointer;
+          background: #3498db;
+          color: white;
+      }
+
+      @media (min-width: 768px) {
+      .container {
+      grid-template-columns: 300px 1fr;
+      }
+      }
+  </style>
+  
+</head>
+
+<body>
+
+<header>
+  <div><strong>📚</strong></div>
+  <h1>Study Room Management</h1>
+  <div class="menu-btn" onclick="toggleMenu()">☰</div>
+</header>
+
+<div class="container">
+  <!-- Filters -->
+  <div class="filters">
+    <input type="text" id="searchInput" placeholder="Search room..." oninput="applyFilters()" />
+    
+    <select id="availabilityFilter" onchange="applyFilters()">
+      <option value="">All Availability</option>
+      <option value="free">Free</option>
+      <option value="partial">Partial</option>
+      <option value="occupied">Occupied</option>
+    </select>
+
+    <select id="occupancySort" onchange="applyFilters()">
+      <option value="">Sort: Occupancy</option>
+      <option value="asc">Occupancy (ascending order)</option>
+      <option value="desc">Occupancy (descending order)</option>
+    </select>
+
+    <select id="temperatureSort" onchange="applyFilters()">
+      <option value="">Sort: Temperature</option>
+      <option value="asc">Temperature (ascending order)</option>
+      <option value="desc">Temperature (descending order)</option>
+    </select>
+  </div>
+
+  <!-- Rooms list -->
+  <div class="rooms" id="roomsContainer">
+    <!-- Room 401 -->
+    <div class="room-card" data-availability="free" data-occupancy="0" data-temperature="21">
+      <div class="room-info">
+        <strong>Room 401</strong>
+        <span class="status free">🟢 Free</span><br/>
+        <span>Occupancy: 0 people |</span>
+        <span>Temp: 21°C</span>
+      </div>
+      <button onclick="window.location.href='room-401.html'">View Details</button>
+    </div>
+
+    <!-- Room 402 -->
+    <div class="room-card" data-availability="partial" data-occupancy="10" data-temperature="24">
+      <div class="room-info">
+        <strong>Room 402</strong>
+        <span class="status partial">🟠 Partial</span><br/> 
+        <span>Occupancy: 10 people | </span>
+        <span>Temp: 24°C</span>
+      </div>
+      <button onclick="window.location.href='room-402.html'">View Details</button>
+    </div>
+
+    <!-- Room 403 -->
+    <div class="room-card" data-availability="partial" data-occupancy="5" data-temperature="22">
+      <div class="room-info">
+        <strong>Room 403</strong>
+        <span class="status partial">🟠 Partial</span><br/>
+        <span>Occupancy: 5 people |</span>
+        <span>Temp: 22°C</span>
+      </div>
+      <button onclick="window.location.href='room-403.html'">View Details</button>
+    </div>
+  </div>
+</div>
+
+<!-- Side Menu -->
+<div class="side-menu" id="sideMenu">
+  <h2>Menu</h2>
+  <ul>
+    <li onclick="window.location.href='rooms.html'">Rooms</li>
+    <li>Contribute</li>
+    <li>Rewards</li>
+    <li>Settings</li>
+    <li>Notifications</li>
+  </ul>
+</div>
+
+<script>
+  // Toggle menu: ouvre et ferme en recliquant
+  function toggleMenu() {
+    document.getElementById('sideMenu').classList.toggle('active');
+  }
+
+  function viewDetails(roomId) {
+    window.location.href = `room.html?id=${roomId}`;
+  }
+
+  // Garde toutes les salles dans une variable globale
+  const allRooms = Array.from(document.querySelectorAll('.room-card'));
+
+  function applyFilters() {
+    const searchText = document.getElementById('searchInput').value.toLowerCase();
+    const availability = document.getElementById('availabilityFilter').value;
+    const occupancySort = document.getElementById('occupancySort').value;
+    const tempSort = document.getElementById('temperatureSort').value;
+
+    let rooms = allRooms.slice(); // Toujours partir de toutes les salles
+
+    // Filtrer par nom et availability
+    rooms = rooms.filter(room => {
+      const name = room.querySelector('strong').textContent.toLowerCase();
+      const roomAvailability = room.getAttribute('data-availability');
+      return name.includes(searchText) && (availability === "" || roomAvailability === availability);
+    });
+
+    // Trier par occupancy si sélectionné
+    if (occupancySort) {
+      rooms.sort((a, b) => {
+        const occA = Number(a.getAttribute('data-occupancy'));
+        const occB = Number(b.getAttribute('data-occupancy'));
+        return occupancySort === "asc" ? occA - occB : occB - occA;
+      });
+    }
+
+    // Trier par température si sélectionné
+    if (tempSort) {
+      rooms.sort((a, b) => {
+        const tempA = Number(a.getAttribute('data-temperature'));
+        const tempB = Number(b.getAttribute('data-temperature'));
+        return tempSort === "asc" ? tempA - tempB : tempB - tempA;
+      });
+    }
+
+    // Mettre à jour le DOM
+    const container = document.getElementById('roomsContainer');
+    container.innerHTML = '';
+    rooms.forEach(room => container.appendChild(room));
+  }
+</script>
+
+</body>
 </html>
