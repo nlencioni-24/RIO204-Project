@@ -4,64 +4,121 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>Room 402</title>
-
-  <link rel="stylesheet" href="src/rooms.css" />
+<link rel="stylesheet" href="src/rooms.css" />
 </head>
 <body>
 
 <header>
   <div class="back-btn" onclick="goHome()">⬅</div>
-  <h1>Room 402 – 4th Floor</h1>
+  <h1>
+    Room 402 – 4th Floor
+    <span id="inBadge">🟢 IN</span>
+  </h1>
 </header>
 
 <div class="content">
   <div class="card">
-    <div class="row"><span>Availability</span><span id="availability">🟢 Free</span></div>
+    <div class="row"><span>Availability</span><span id="availability" class="free">🟢 Free</span></div>
     <div class="row"><span>Estimated occupancy</span><span id="occupancy">0 people</span></div>
     <div class="row"><span>Temperature</span><span id="temperature">21°C</span></div>
     <div class="row"><span>Humidity</span><span id="humidity">45%</span></div>
-    <div class="row"><span>Light</span><span>Good</span></div>
-    <div class="row"><span>AC / Heating</span><span>No</span></div>
+    <div class="row"><span>Light</span><span id="light">Good</span></div>
+    <div class="row"><span>Windows</span><span id="windows">Closed</span></div>
+    <div class="row"><span>AC / Heating</span><span id="ac">No</span></div>
   </div>
 
+  <!-- Trois boutons principaux -->
   <div class="buttons">
-    <button class="contribute">I am in this room</button>
-    <button class="favorite">⭐ Mark favorite / Go there</button>
+    <button id="inRoomBtn" class="contribute" onclick="enterRoom()">I am in this room</button>
+    <button class="left-room" onclick="leaveRoom()">I left the room</button>
+    <button class="change" onclick="makeChange()">Make a change</button>
+  </div>
+
+  <!-- Bouton "Mark favorite" en dessous -->
+  <div class="favorite-container">
+    <button class="favorite" onclick="alert('Marked as favorite / Go there')">⭐ Mark favorite / Go there</button>
   </div>
 </div>
 
-<script src="src/sensors.js"></script>
+<script src="sensors.js"></script>
 <script>
-function goHome(){window.location.href='index.html'}
+function goHome(){ window.location.href='index.html'; }
 
-function updateRoomValues(){
-  const sensor = sensorData["402"];
-  if(!sensor) return;
+// --- Occupancy dynamique ---
+let currentOccupancy = 0;
+const maxPartial = 20;
+const availabilityElem = document.getElementById('availability');
+const occupancyElem = document.getElementById('occupancy');
+const inBadge = document.getElementById('inBadge');
+const inRoomBtn = document.getElementById('inRoomBtn');
 
-  const availabilityElem = document.getElementById('availability');
-  const occupancyElem = document.getElementById('occupancy');
-  const tempElem = document.getElementById('temperature');
-  const humElem = document.getElementById('humidity');
+function updateOccupancyDisplay() {
+  occupancyElem.textContent = currentOccupancy + " people";
 
-  // Disponibilité selon occupancy
-  if(sensor.occupancy===0){
-    availabilityElem.textContent="🟢 Free";
-    availabilityElem.className="free";
-  } else if(sensor.occupancy<=20){
-    availabilityElem.textContent="🟠 Partial";
-    availabilityElem.className="partial";
+  if(currentOccupancy === 0){
+    availabilityElem.textContent = "🟢 Free";
+    availabilityElem.className = "free";
+  } else if(currentOccupancy <= maxPartial){
+    availabilityElem.textContent = "🟠 Partial";
+    availabilityElem.className = "partial";
   } else {
-    availabilityElem.textContent="🔴 Occupied";
-    availabilityElem.className="occupied";
+    availabilityElem.textContent = "🔴 Occupied";
+    availabilityElem.className = "occupied";
   }
-
-  occupancyElem.textContent=sensor.occupancy+" people";
-  tempElem.textContent=sensor.temperature+"°C";
-  humElem.textContent=sensor.humidity+"%";
 }
 
-setInterval(updateRoomValues,5000);
-updateRoomValues();
+// --- Boutons "I am in / I left" ---
+function enterRoom() {
+  currentOccupancy++;
+  updateOccupancyDisplay();
+  inBadge.style.display = "inline";
+  inRoomBtn.textContent = "✅ In the room";
+  inRoomBtn.disabled = true;
+  inRoomBtn.classList.add("in-room-active"); // vert foncé
+}
+
+function leaveRoom() {
+  if(currentOccupancy > 0) currentOccupancy--;
+  updateOccupancyDisplay();
+  inBadge.style.display = "none";
+  inRoomBtn.textContent = "I am in this room";
+  inRoomBtn.disabled = false;
+  inRoomBtn.classList.remove("in-room-active"); // redevient vert clair
+}
+
+// --- Make a change : modifier occupancy uniquement si in the room ---
+function makeChange() {
+  if (!inRoomBtn.disabled) {
+    alert("Error: You must be IN the room to change occupancy.");
+    return;
+  }
+  let newOccupancy = prompt("Enter new occupancy INCLUDING yourself:", currentOccupancy);
+  if(newOccupancy !== null) {
+    newOccupancy = parseInt(newOccupancy);
+    if(!isNaN(newOccupancy) && newOccupancy >= 1){
+      currentOccupancy = newOccupancy;
+      updateOccupancyDisplay();
+    } else {
+      alert("Please enter a valid number >= 1 (including yourself).");
+    }
+  }
+}
+
+// Initial display
+updateOccupancyDisplay();
+
+// --- Sensors.js update for other values ---
+function updateSensorsDisplay() {
+  const sensor = sensorData["401"];
+  if(!sensor) return;
+
+  document.getElementById('temperature').textContent = sensor.temperature + "°C";
+  document.getElementById('humidity').textContent = sensor.humidity + "%";
+}
+
+// Mise à jour toutes les 5 secondes
+setInterval(updateSensorsDisplay, 5000);
+updateSensorsDisplay();
 </script>
 
 </body>
