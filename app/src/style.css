@@ -1,4 +1,4 @@
-:root {
+    :root {
       --green: #2ecc71;
       --red: #e74c3c;
       --orange: #f39c12;
@@ -100,24 +100,3 @@
     @media (min-width: 768px) {
       .container { grid-template-columns: 300px 1fr; }
     }
-
-
-body{margin:0;font-family:Arial,Helvetica,sans-serif;background:#f4f6f8}
-header{background:white;padding:14px 20px;border-bottom:1px solid #ddd;display:flex;align-items:center;gap:12px}
-.back-btn{cursor:pointer;font-size:18px}
-.content{max-width:600px;margin:auto;padding:20px}
-.card{background:white;border-radius:10px;padding:20px}
-.row{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #eee}
-.row:last-child{border-bottom:none}
-.free{color:#2ecc71;font-weight:bold}
-.partial{color:#f39c12;font-weight:bold}
-.occupied{color:#e74c3c;font-weight:bold}
-.buttons{margin-top:20px;display:grid;gap:12px}
-button{padding:12px;border-radius:8px;border:none;cursor:pointer;font-size:15px}
-.contribute{background:#3498db;color:white}
-.favorite{background:#ecf0f1}
-header h1 {
-  flex: 1;               /* prend tout l’espace restant */
-  text-align: center;    /* centre uniquement le titre */
-  margin: 0;             /* supprime les marges par défaut */
-}
