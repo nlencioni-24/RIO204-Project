@@ -2,9 +2,11 @@ from flask import Flask, jsonify, request
 from flask_cors import CORS
 from datetime import datetime, timedelta
 import room_service
+from flasgger import Swagger
 
 app = Flask(__name__)
 CORS(app)
+swagger = Swagger(app)
 
 def get_default_dates():
     """Get default date range (today to 2 weeks from now)."""
@@ -14,7 +16,33 @@ def get_default_dates():
 
 @app.route('/api/rooms', methods=['GET'])
 def get_rooms():
-    """Get list of all available rooms."""
+    """
+    Get list of all available rooms.
+    ---
+    tags:
+      - Rooms
+    responses:
+      200:
+        description: List of rooms retrieved successfully
+        schema:
+          type: object
+          properties:
+            success:
+              type: boolean
+            rooms:
+              type: array
+              items:
+                type: object
+                properties:
+                  id:
+                    type: integer
+                  name:
+                    type: string
+            count:
+              type: integer
+      500:
+        description: Internal Server Error
+    """
     try:
         rooms = room_service.get_unique_rooms()
         return jsonify({
@@ -31,7 +59,33 @@ def get_rooms():
 
 @app.route('/api/schedule/<int:room_id>', methods=['GET'])
 def get_room_schedule(room_id):
-    """Get schedule for a specific room."""
+    """
+    Get schedule for a specific room.
+    ---
+    tags:
+      - Schedules
+    parameters:
+      - name: room_id
+        in: path
+        type: integer
+        required: true
+        description: The ID of the room
+      - name: start
+        in: query
+        type: string
+        description: Start date (YYYY-MM-DD)
+      - name: end
+        in: query
+        type: string
+        description: End date (YYYY-MM-DD)
+    responses:
+      200:
+        description: Schedule retrieved successfully
+      401:
+        description: Authentication failed
+      500:
+        description: Internal Server Error
+    """
     start_date = request.args.get('start')
     end_date = request.args.get('end')
     
@@ -63,7 +117,26 @@ def get_room_schedule(room_id):
 
 @app.route('/api/schedule', methods=['GET'])
 def get_all_schedules():
-    """Get schedule for all rooms."""
+    """
+    Get schedule for all rooms.
+    ---
+    tags:
+      - Schedules
+    parameters:
+      - name: start
+        in: query
+        type: string
+        description: Start date (YYYY-MM-DD)
+      - name: end
+        in: query
+        type: string
+        description: End date (YYYY-MM-DD)
+    responses:
+      200:
+        description: All schedules retrieved successfully
+      500:
+        description: Internal Server Error
+    """
     start_date = request.args.get('start')
     end_date = request.args.get('end')
     
@@ -95,7 +168,22 @@ def get_all_schedules():
 
 @app.route('/api/auth/status', methods=['GET'])
 def auth_status():
-    """Check if authentication cookies are available."""
+    """
+    Check if authentication cookies are available.
+    ---
+    tags:
+      - Authentication
+    responses:
+      200:
+        description: Auth status returned
+        schema:
+          type: object
+          properties:
+            authenticated:
+              type: boolean
+            message:
+              type: string
+    """
     has_cookies = room_service.check_auth_status()
     return jsonify({
         "authenticated": has_cookies,
@@ -104,6 +192,19 @@ def auth_status():
 
 @app.route('/api/auth/refresh', methods=['POST'])
 def auth_refresh():
+    """
+    Refresh authentication cookies.
+    ---
+    tags:
+      - Authentication
+    responses:
+      200:
+        description: Auth refreshed successfully
+      401:
+        description: Auth failed
+      500:
+        description: Internal Server Error
+    """
     try:
         success = room_service.refresh_auth()
         if success:
@@ -124,7 +225,15 @@ def auth_refresh():
 
 @app.route('/api/health', methods=['GET'])
 def health():
-    """Health check endpoint."""
+    """
+    Health check endpoint.
+    ---
+    tags:
+      - Health
+    responses:
+      200:
+        description: API is healthy
+    """
     return jsonify({"status": "ok"})
 
 if __name__ == '__main__':

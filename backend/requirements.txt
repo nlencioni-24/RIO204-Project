@@ -5,3 +5,4 @@ keyring
 selenium
 webdriver-manager
 urllib3<2
+flasgger
