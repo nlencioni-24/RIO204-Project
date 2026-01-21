@@ -1,18 +1,290 @@
 <!DOCTYPE html>
-<html lang="fr">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <meta name="theme-color" content="#1a1a2e" />
-    <meta name="description" content="Vérification des réservations de salles - Télécom Paris" />
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
-    <title>Salles TP - Réservations</title>
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/index.jsx"></script>
-  </body>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Study Room Management</title>
+  <link rel="stylesheet" href="src/style.css" />
+</head>
+
+<body>
+
+  <header>
+    <div><strong>📚</strong></div>
+    <h1>Study Room Management</h1>
+    <div class="menu-btn" onclick="toggleMenu()">☰</div>
+  </header>
+
+  <!-- Side Menu -->
+  <div class="side-menu" id="sideMenu">
+    <h2>Menu</h2>
+    <ul>
+      <li onclick="window.location.href='index.html'">Rooms</li>
+      <li onclick="window.location.href='rewards.html'">Rewards</li>
+      <li onclick="window.location.href='settings.html'">Settings</li>
+    </ul>
+  </div>
+
+  <div class="container">
+    <!-- Filters -->
+    <div class="filters">
+      <input type="text" id="searchInput" placeholder="Search room..." />
+
+      <select id="availabilityFilter">
+        <option value="">All Availability</option>
+        <option value="free">Free</option>
+        <option value="partial">Partial</option>
+        <option value="occupied">Occupied</option>
+      </select>
+
+      <select id="occupancySort">
+        <option value="">Sort: Occupancy</option>
+        <option value="asc">Occupancy (asc)</option>
+        <option value="desc">Occupancy (desc)</option>
+      </select>
+
+      <select id="temperatureSort">
+        <option value="">Sort: Temperature</option>
+        <option value="asc">Temperature (asc)</option>
+        <option value="desc">Temperature (desc)</option>
+      </select>
+    </div>
+
+    <div id="loading" style="text-align:center; padding: 20px;">Loading rooms...</div>
+    <div id="error" style="color:red; text-align:center; display:none;"></div>
+
+    <!-- Rooms list -->
+    <div class="rooms" id="roomsContainer"></div>
+  </div>
+
+  <script type="module">
+    import { fetchRooms, fetchAllSchedules } from './src/api.js';
+    import { getSensorData } from './src/sensors.js';
+
+    let allRooms = [];
+    let allSchedules = [];
+    const roomsContainer = document.getElementById('roomsContainer');
+    const loadingDiv = document.getElementById('loading');
+    const errorDiv = document.getElementById('error');
+
+    // Menu toggle (global scope needed for HTML onclick, or attach listener)
+    window.toggleMenu = function () {
+      document.getElementById('sideMenu').classList.toggle('active');
+    }
+
+    function isClassNow(events) {
+      if (!events || events.length === 0) return false;
+
+      const now = new Date();
+
+      for (const event of events) {
+        if (!event.start || !event.end) continue;
+        // Dates are strings YYYY-MM-DD HH:MM:SS from API
+        const start = new Date(event.start.replace(' ', 'T'));
+        const end = new Date(event.end.replace(' ', 'T'));
+
+        if (now >= start && now <= end) {
+          return true;
+        }
+      }
+      return false;
+    }
+
+    // Load Rooms on Start
+    async function init() {
+      try {
+        const [roomsResult, schedulesResult] = await Promise.all([
+          fetchRooms(),
+          fetchAllSchedules()
+        ]);
+
+        if (roomsResult.success) {
+          loadingDiv.style.display = 'none';
+          allRooms = roomsResult.rooms;
+
+          if (schedulesResult.success) {
+            allSchedules = schedulesResult.schedules;
+          } else {
+            console.warn('Failed to load schedules:', schedulesResult.error);
+          }
+
+          // Initial render
+          renderRooms(allRooms);
+
+          // Start sensor update loop
+          setInterval(updateSensors, 5000);
+          updateSensors();
+        } else {
+          loadingDiv.style.display = 'none';
+          errorDiv.textContent = `Error loading rooms: ${roomsResult.error || 'Unknown error'}`;
+          errorDiv.style.display = 'block';
+        }
+      } catch (err) {
+        loadingDiv.style.display = 'none';
+        errorDiv.textContent = `Error initializing: ${err.message}`;
+        errorDiv.style.display = 'block';
+      }
+    }
+
+    function renderRooms(rooms) {
+      roomsContainer.innerHTML = '';
+
+      rooms.forEach(room => {
+        // Get sensor data
+        const sensor = getSensorData(room.id);
+
+        // Get schedule data
+        const roomScheduleWrapper = allSchedules.find(s => s.room.id === room.id);
+        const events = roomScheduleWrapper ? roomScheduleWrapper.schedule.events : [];
+        const hasClassNow = isClassNow(events);
+
+        // Determine status
+        let status = 'free';
+        let statusIcon = '🟢';
+        let statusText = 'Free';
+
+        if (hasClassNow) {
+          status = 'occupied';
+          statusIcon = '🔴';
+          statusText = 'Occupied';
+        } else if (sensor.occupancy > 20) {
+          status = 'occupied';
+          statusIcon = '🔴';
+          statusText = 'Occupied';
+        } else if (sensor.occupancy > 0) {
+          status = 'partial';
+          statusIcon = '🟠';
+          statusText = 'Partial';
+        }
+
+        const card = document.createElement('div');
+        card.className = 'room-card';
+        card.dataset.roomid = room.id;
+        card.dataset.name = room.nom.toLowerCase();
+        card.dataset.availability = status;
+        card.dataset.occupancy = sensor.occupancy;
+        card.dataset.temperature = sensor.temperature;
+
+        card.innerHTML = `
+        <div class="room-info">
+          <strong>${room.nom}</strong>
+          <span class="status ${status}">${statusIcon} ${statusText}</span><br/>
+          <span>Occ: ${sensor.occupancy} | </span>
+          <span class="temp-span">Temp: ${sensor.temperature}°C</span>
+          <span class="hum-span"> | Hum: ${sensor.humidity}%</span>
+        </div>
+        <button onclick="window.location.href='room.html?id=${room.id}'">View Details</button>
+      `;
+        roomsContainer.appendChild(card);
+      });
+    }
+
+    function updateSensors() {
+      const cards = document.querySelectorAll('.room-card');
+      cards.forEach(card => {
+        const roomId = parseInt(card.dataset.roomid); // dataset attributes are strings
+        const sensor = getSensorData(roomId);
+
+        // Get schedule data (must find by numeric ID if stored that way)
+        // allRooms IDs are integers usually, API returns them as whatever
+        const roomScheduleWrapper = allSchedules.find(s => s.room.id == roomId);
+        const events = roomScheduleWrapper ? roomScheduleWrapper.schedule.events : [];
+        const hasClassNow = isClassNow(events);
+
+        // Determine status
+        let status = 'free';
+        let statusIcon = '🟢';
+        let statusText = 'Free';
+
+        if (hasClassNow) {
+          status = 'occupied';
+          statusIcon = '🔴';
+          statusText = 'Occupied';
+        } else if (sensor.occupancy > 20) {
+          status = 'occupied';
+          statusIcon = '🔴';
+          statusText = 'Occupied';
+        } else if (sensor.occupancy > 0) {
+          status = 'partial';
+          statusIcon = '🟠';
+          statusText = 'Partial';
+        }
+
+        // Update DOM
+        card.querySelector('.temp-span').textContent = `Temp: ${sensor.temperature}°C`;
+        card.querySelector('.hum-span').textContent = ` | Hum: ${sensor.humidity}%`;
+        const occSpan = card.querySelector('.room-info span:nth-of-type(2)');
+        occSpan.textContent = `Occ: ${sensor.occupancy} | `;
+
+        const statusSpan = card.querySelector('.status');
+        // Update class and text
+        statusSpan.className = `status ${status}`;
+        statusSpan.textContent = `${statusIcon} ${statusText}`;
+
+        // Update attributes for sorting
+        card.dataset.temperature = sensor.temperature;
+        card.dataset.occupancy = sensor.occupancy;
+        card.dataset.availability = status;
+      });
+
+      applyFilters();
+    }
+
+    // Filter Logic
+    window.applyFilters = function () {
+      const searchText = document.getElementById('searchInput').value.toLowerCase();
+      const availability = document.getElementById('availabilityFilter').value;
+      const occupancySort = document.getElementById('occupancySort').value;
+      const tempSort = document.getElementById('temperatureSort').value;
+
+      const cards = Array.from(document.querySelectorAll('.room-card'));
+
+      cards.forEach(card => {
+        const matchesSearch = card.dataset.name.includes(searchText);
+        const matchesAvail = availability === "" || card.dataset.availability === availability;
+
+        if (matchesSearch && matchesAvail) {
+          card.style.display = "flex"; // or initial display type
+        } else {
+          card.style.display = "none";
+        }
+      });
+
+      // Sorting visible cards? Structure is flex/grid, but we can reorder DOM elements
+      if (occupancySort || tempSort) {
+        const visibleCards = cards.filter(c => c.style.display !== 'none');
+
+        visibleCards.sort((a, b) => {
+          if (occupancySort) {
+            const valA = parseFloat(a.dataset.occupancy);
+            const valB = parseFloat(b.dataset.occupancy);
+            if (valA !== valB) return occupancySort === 'asc' ? valA - valB : valB - valA;
+          }
+          if (tempSort) {
+            const valA = parseFloat(a.dataset.temperature);
+            const valB = parseFloat(b.dataset.temperature);
+            return tempSort === 'asc' ? valA - valB : valB - valA;
+          }
+          return 0;
+        });
+
+        // Re-append in order
+        visibleCards.forEach(card => roomsContainer.appendChild(card));
+      }
+    }
+
+    // Event Listeners for Filters
+    document.getElementById('searchInput').addEventListener('input', applyFilters);
+    document.getElementById('availabilityFilter').addEventListener('change', applyFilters);
+    document.getElementById('occupancySort').addEventListener('change', applyFilters);
+    document.getElementById('temperatureSort').addEventListener('change', applyFilters);
+
+    // Start
+    init();
+
+  </script>
+
+</body>
+
 </html>
