@@ -1,0 +1,7 @@
+flask
+flask-cors
+requests
+keyring
+selenium
+webdriver-manager
+urllib3<2

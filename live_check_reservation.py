@@ -3,11 +3,28 @@ import time
 import json
 import re
 import requests
-import urllib.parse
+
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
 from webdriver_manager.chrome import ChromeDriverManager
 import os
+import keyring
+
+SERVICE_ID = "RIO_PROJECT_SYNAPSES"
+
+END_DATE = "2025-12-22"
+START_DATE = "2026-01-19"
+
+URL = "https://synapses.telecom-paris.fr/salles/events-fc-scheduler"
+
+HEADERS = {
+    "Accept": "application/json, text/javascript, */*; q=0.01",
+    "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
+    "Origin": "https://synapses.telecom-paris.fr",
+    "Referer": "https://synapses.telecom-paris.fr/salles/planning-multi",
+    "User-Agent": "Mozilla/5.0",
+    "X-Requested-With": "XMLHttpRequest",
+}
 
 def load_rooms(file_path):
     rooms_map = {}
@@ -43,30 +60,35 @@ def load_rooms(file_path):
         return {}
     return rooms_map
 
-def save_cookies_to_file(cookies, file_path='cookies.json'):
+def save_cookies_securely(cookies):
     try:
-        with open(file_path, 'w', encoding='utf-8') as f:
-            json.dump(cookies, f)
-        print(f"Cookies saved to {file_path}")
+        if 'TPTauth' in cookies:
+            keyring.set_password(SERVICE_ID, "TPTauth", cookies['TPTauth'])
+        if 'SYNAPSES_SESSION' in cookies:
+            keyring.set_password(SERVICE_ID, "SYNAPSES_SESSION", cookies['SYNAPSES_SESSION'])
+        print(f"Cookies saved securely in keyring under service '{SERVICE_ID}'")
     except Exception as e:
-        print(f"Error saving cookies: {e}")
+        print(f"Error saving cookies to keyring: {e}")
 
-def load_cookies_from_file(file_path='cookies.json'):
-    if not os.path.exists(file_path):
-        return None
+def load_cookies_securely():
     try:
-        with open(file_path, 'r', encoding='utf-8') as f:
-            return json.load(f)
+        tpt_auth = keyring.get_password(SERVICE_ID, "TPTauth")
+        synapses_session = keyring.get_password(SERVICE_ID, "SYNAPSES_SESSION")
+        
+        if tpt_auth and synapses_session:
+            return {
+                "TPTauth": tpt_auth,
+                "SYNAPSES_SESSION": synapses_session
+            }
+        return None
     except Exception as e:
-        print(f"Error loading cookies: {e}")
+        print(f"Error loading cookies from keyring: {e}")
         return None
 
 def get_auth_cookies():
     
     options = webdriver.ChromeOptions()
-    
     driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
-    
     target_url = "https://synapses.telecom-paris.fr/salles/planning-multi"
     driver.get(target_url)
     
@@ -90,48 +112,27 @@ def get_auth_cookies():
                 sys.exit(1)
     finally:
         driver.quit()
-        
     return cookies_dict
 
-def parse_curl_template(file_path):
-    with open(file_path, 'r', encoding='utf-8') as f:
-        content = f.read()
 
-    url_match = re.search(r"curl\s+'([^']+)'", content)
-    url = url_match.group(1) if url_match else None
-    
-    headers = {}
-    header_matches = re.findall(r"-H\s+'([^:]+):\s*([^']+)'", content)
-    for key, value in header_matches:
-        if key.lower() not in ['cookie', 'content-length']:
-            headers[key] = value
 
-    data_match = re.search(r"--data-raw\s+'([^']+)'", content)
-    data_str = data_match.group(1) if data_match else ""
-    
-    return url, headers, data_str
+def fetch_schedule(room_id, room_name, cookies):
+    payload = [
+        ("salle[]", room_id),
+        ("start", START_DATE),
+        ("end", END_DATE)
+    ]
 
-def fetch_schedule(room_id, room_name, cookies, template_file='room_schedule_infos.txt'):
-    url, headers, data_template = parse_curl_template(template_file)
-    
-    if not url:
-        print("Error: Pb URL")
-        return False
-
-    cookie_str = f"TPTauth={cookies['TPTauth']}; SYNAPSES_SESSION={cookies['SYNAPSES_SESSION']}"
-    headers['Cookie'] = cookie_str
-    
-    parsed_data = urllib.parse.parse_qs(data_template)
-    
-    parsed_data['salle[]'] = [str(room_id)]
-    
-    new_body = urllib.parse.urlencode(parsed_data, doseq=True)
-    
     try:
-        response = requests.post(url, headers=headers, data=new_body)
+        response = requests.post(
+            URL, data=payload, headers=HEADERS, cookies=cookies, timeout=15
+        )
         response.raise_for_status()
         
-        events = response.json()
+        try:
+            events = response.json()
+        except requests.exceptions.JSONDecodeError:
+            return False
         
         if not events:
             print("Pas de cours dans cette salle")
@@ -150,45 +151,74 @@ def fetch_schedule(room_id, room_name, cookies, template_file='room_schedule_inf
     except Exception as e:
         print(f"Request failed: {e}")
         if 'response' in locals():
-            print(f"Response content: {response.text}")
+            print(f"Response content snippet: {response.text[:200]}")
         return False
 
 def main():
-    if len(sys.argv) < 2:
-        print("Usage: python live_check_reservation.py <room_name>")
-        return
-
-    target_room_name = sys.argv[1]
-    
     rooms_file = 'salles_etage4.txt'
     rooms_map = load_rooms(rooms_file)
     
-    room_id = rooms_map.get(target_room_name)
-    if not room_id:
-        for name, rid in rooms_map.items():
-            if target_room_name.lower() in name.lower():
-                room_id = rid
-                target_room_name = name
-                break
+    target_rooms = []
     
-    if not room_id:
-        print(f"Salle '{target_room_name}' non trouvée dans {rooms_file}.")
+    search_term = None
+    if len(sys.argv) > 1:
+        search_term = sys.argv[1]
+    
+    if search_term:
+        if search_term in rooms_map:
+             target_rooms.append((search_term, rooms_map[search_term]))
+        else:
+            found = False
+            for name, rid in rooms_map.items():
+                if search_term.lower() in name.lower():
+                    target_rooms.append((name, rid))
+                    found = True
+                    break 
+            
+            if not found:
+                 print(f"Salle '{search_term}' non trouvée. Vérification de toutes les salles...")
+                 unique_ids = set()
+                 for name, rid in rooms_map.items():
+                     if rid not in unique_ids:
+                         target_rooms.append((name, rid))
+                         unique_ids.add(rid)
+    else:
+        print("Aucune salle spécifiée. Vérification de toutes les salles...")
+        unique_ids = set()
+        for name, rid in rooms_map.items():
+             if rid not in unique_ids:
+                 target_rooms.append((name, rid))
+                 unique_ids.add(rid)
+
+    if not target_rooms:
+        print("Aucune salle à vérifier (fichier vide ou structure incorrecte).")
         return
 
-    cookies_file = 'cookies.json'
-    cookies = load_cookies_from_file(cookies_file)
-    
-    success = False
-    if cookies:
-        success = fetch_schedule(room_id, target_room_name, cookies)
-        if not success:
-            print("Cookies invalides")
-    
-    if not success:
-        print("Nouveau cookies...")
+    target_rooms.sort(key=lambda x: x[0])
+
+    cookies = load_cookies_securely()
+    if not cookies:
+        print("Cookies absents, authentification requise...")
         cookies = get_auth_cookies()
-        save_cookies_to_file(cookies, cookies_file)
-        fetch_schedule(room_id, target_room_name, cookies)
+        save_cookies_securely(cookies)
+
+    refreshed_this_run = False
+
+    for name, rid in target_rooms:
+        success = fetch_schedule(rid, name, cookies)
+        
+        if not success:
+            if not refreshed_this_run:
+                print("Échec récupération. Tentative de rafraîchissement des cookies...")
+                cookies = get_auth_cookies()
+                save_cookies_securely(cookies)
+                refreshed_this_run = True
+                
+                success = fetch_schedule(rid, name, cookies)
+                if not success:
+                    print(f"Abandon pour {name} après ré-authentification.")
+            else:
+                print(f"Échec pour {name} malgré cookies frais (erreur serveur ou autre).")
 
 if __name__ == "__main__":
     main()

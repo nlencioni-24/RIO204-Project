@@ -1,0 +1,7 @@
+cookies.json
+venv/
+__pycache__/
+AGENT.md
+app/
+.DS_Store
+
