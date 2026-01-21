@@ -1,0 +1,56 @@
+ * Serving Flask app 'api'
+ * Debug mode: off
+[31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5001
+ * Running on http://137.194.156.100:5001
+[33mPress CTRL+C to quit[0m
+ * Serving Flask app 'api'
+ * Debug mode: off
+[31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5001
+ * Running on http://137.194.156.100:5001
+[33mPress CTRL+C to quit[0m
+ * Serving Flask app 'api'
+ * Debug mode: off
+[31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5001
+ * Running on http://137.194.156.100:5001
+[33mPress CTRL+C to quit[0m
+ * Serving Flask app 'api'
+ * Debug mode: off
+[31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5001
+ * Running on http://137.194.156.100:5001
+[33mPress CTRL+C to quit[0m
+127.0.0.1 - - [21/Jan/2026 10:44:42] "[32mGET /apidocs HTTP/1.1[0m" 308 -
+127.0.0.1 - - [21/Jan/2026 10:44:42] "GET /apidocs/ HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jan/2026 10:44:42] "GET /flasgger_static/swagger-ui.css HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jan/2026 10:44:42] "GET /flasgger_static/swagger-ui-bundle.js HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jan/2026 10:44:42] "GET /flasgger_static/swagger-ui-standalone-preset.js HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jan/2026 10:44:42] "GET /flasgger_static/lib/jquery.min.js HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jan/2026 10:44:42] "GET /apispec_1.json HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jan/2026 10:44:42] "GET /flasgger_static/favicon-32x32.png HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jan/2026 10:44:46] "GET /api/rooms HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jan/2026 10:45:00] "GET /api/schedule HTTP/1.1" 200 -
+ * Serving Flask app 'api'
+ * Debug mode: off
+[31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5001
+ * Running on http://137.194.156.100:5001
+[33mPress CTRL+C to quit[0m
+127.0.0.1 - - [21/Jan/2026 10:45:20] "GET /api/rooms HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jan/2026 10:45:20] "GET /api/schedule HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jan/2026 10:45:21] "[31m[1mGET /api/schedule/1098 HTTP/1.1[0m" 401 -
+127.0.0.1 - - [21/Jan/2026 10:45:24] "GET /api/rooms HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jan/2026 10:45:24] "GET /api/schedule HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jan/2026 10:45:25] "[31m[1mGET /api/schedule/1067 HTTP/1.1[0m" 401 -
+127.0.0.1 - - [21/Jan/2026 10:45:26] "GET /api/rooms HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jan/2026 10:45:26] "GET /api/schedule HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jan/2026 10:45:27] "[31m[1mGET /api/schedule/1236 HTTP/1.1[0m" 401 -
+127.0.0.1 - - [21/Jan/2026 10:45:29] "GET /api/rooms HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jan/2026 10:45:29] "GET /api/schedule HTTP/1.1" 200 -

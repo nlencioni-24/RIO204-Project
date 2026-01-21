@@ -4,7 +4,7 @@ import requests
 import keyring
 import os
 
-SERVICE_ID = "RIO_PROJECT_SYNAPSES"
+SERVICE_ID = "RIO_PROJECT_SYNAPSES2"
 URL = "https://synapses.telecom-paris.fr/salles/events-fc-scheduler"
 
 HEADERS = {
