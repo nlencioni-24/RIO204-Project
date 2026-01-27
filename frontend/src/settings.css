@@ -1,0 +1,138 @@
+/* ======================== */
+/* Base Styles              */
+/* ======================== */
+body {
+  margin: 0;
+  font-family: Arial, Helvetica, sans-serif;
+  background: #f4f6f8;
+  color: #2c3e50;
+}
+
+/* Header */
+header {
+  background: white;
+  padding: 14px 20px;
+  border-bottom: 1px solid #ddd;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  position: relative;
+  z-index: 1000;
+}
+
+.back-btn {
+  cursor: pointer;
+  font-size: 40px;
+  font-weight: bold;
+  user-select: none;
+}
+
+header h1, header h2 {
+  flex: 1;
+  text-align: center;
+  margin: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Content Container */
+.content {
+  max-width: 600px;
+  width: 100%;
+  margin: 20px auto;
+  padding: 20px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* Card */
+.card {
+  background: white;
+  border-radius: 10px;
+  padding: 20px;
+  width: 100%;
+  box-sizing: border-box;
+  text-align: center;
+}
+
+/* Bouton Reset Score */
+.left-room {
+  width: 100%;
+  padding: 12px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  font-size: 15px;
+  background: #e74c3c;
+  color: white;
+  margin-top: 12px;
+}
+
+.left-room:active {
+  background: #c0392b;
+}
+
+/* Modal overlay */
+#resetModal {
+  display: none;
+  position: fixed;
+  top:0; left:0;
+  width:100%; height:100%;
+  background: rgba(0,0,0,0.5);
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+#resetModal .modal-content {
+  background: white;
+  padding: 20px;
+  border-radius: 10px;
+  text-align: center;
+  min-width: 300px;
+  box-sizing: border-box;
+}
+
+#resetModal button {
+  padding: 8px 14px;
+  margin: 10px 6px 0 6px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+#resetModal .confirm { background: #e74c3c; color:white; }
+#resetModal .cancel { background: #7f8c8d; color:white; }
+
+/* ======================== */
+/* Responsive Mobile        */
+/* ======================== */
+@media (max-width: 767px) {
+  header h1, header h2 {
+    font-size: 16px;
+  }
+
+  .content {
+    margin: 10px auto;
+    padding: 16px;
+    align-items: center;
+  }
+
+  .card {
+    padding: 16px;
+  }
+
+  .left-room {
+    font-size: 16px;
+    padding: 14px;
+  }
+
+  #resetModal .modal-content {
+    min-width: 90%;
+  }
+}

@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Login - Study Room Manager</title>
+    <link rel="stylesheet" href="src/style.css" />
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: #f0f2f5;
+            font-family: 'Segoe UI', sans-serif;
+        }
+
+        .login-container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 400px;
+            text-align: center;
+        }
+
+        .login-container h1 {
+            margin-bottom: 20px;
+            color: #333;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+            text-align: left;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            color: #666;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+
+        button {
+            width: 100%;
+            padding: 12px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+            margin-top: 10px;
+            transition: background 0.3s;
+        }
+
+        button:hover {
+            background-color: #45a049;
+        }
+
+        button:disabled {
+            background-color: #ccc;
+        }
+
+        .error {
+            color: red;
+            margin-top: 10px;
+            font-size: 14px;
+            display: none;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="login-container">
+        <h1>Login</h1>
+        <form id="loginForm">
+            <div class="form-group">
+                <label for="username">Username (Telecom Paris)</label>
+                <input type="text" id="username" name="username" required placeholder="e.g. amellier">
+            </div>
+            <div class="form-group">
+                <label for="password">Password</label>
+                <input type="password" id="password" name="password" required placeholder="Password">
+            </div>
+            <button type="submit" id="loginBtn">Sign In</button>
+            <div id="errorMsg" class="error"></div>
+        </form>
+    </div>
+
+    <script type="module">
+        import { login, checkAuth } from './src/api.js';
+
+        // Auto-redirect if already logged in
+        (async () => {
+            const status = await checkAuth();
+            if (status.authenticated) {
+                window.location.href = 'dashboard.html';
+            }
+        })();
+
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const user = e.target.username.value;
+            const pass = e.target.password.value;
+            const btn = document.getElementById('loginBtn');
+            const err = document.getElementById('errorMsg');
+
+            btn.disabled = true;
+            btn.textContent = 'Logging in...';
+            err.style.display = 'none';
+
+            const result = await login(user, pass);
+
+            if (result.success) {
+                window.location.href = 'dashboard.html';
+            } else {
+                btn.disabled = false;
+                btn.textContent = 'Sign In';
+                err.textContent = result.message || 'Login failed';
+                err.style.display = 'block';
+            }
+        });
+    </script>
+
+</body>
+
+</html>

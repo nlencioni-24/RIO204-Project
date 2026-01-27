@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Study Room Management</title>
+  <link rel="stylesheet" href="src/style.css" />
+</head>
+
+<body>
+
+  <header>
+    <div><strong>📚RIO203📚</strong></div>
+    <h1>Study Room Management</h1>
+    <div class="menu-btn" onclick="toggleMenu()">☰</div>
+  </header>
+
+  <!-- Side Menu -->
+  <div class="side-menu" id="sideMenu">
+    <h2>Menu</h2>
+    <ul>
+      <li onclick="window.location.href='index.html'">Rooms</li>
+      <li onclick="window.location.href='rewards.html'">Rewards</li>
+      <li onclick="window.location.href='settings.html'">Settings</li>
+    </ul>
+  </div>
+
+  <div class="container">
+    <!-- Filters (Column 1) -->
+    <div class="filters">
+      <input type="text" id="searchInput" placeholder="Search room..." oninput="applyFilters()" />
+
+      <select id="availabilityFilter" onchange="applyFilters()">
+        <option value="">All Availability</option>
+        <option value="free">Free</option>
+        <option value="partial">Partial</option>
+        <option value="occupied">Occupied</option>
+      </select>
+
+      <select id="occupancySort" onchange="applyFilters()">
+        <option value="">Sort: Occupancy</option>
+        <option value="asc">Occupancy (asc)</option>
+        <option value="desc">Occupancy (desc)</option>
+      </select>
+
+      <select id="temperatureSort" onchange="applyFilters()">
+        <option value="">Sort: Temperature</option>
+        <option value="asc">Temperature (asc)</option>
+        <option value="desc">Temperature (desc)</option>
+      </select>
+    </div>
+
+    <!-- Rooms list (Column 2) -->
+    <!-- Loading/Error will be injected INSIDE here to preserve Grid layout -->
+    <div class="rooms" id="roomsContainer">
+      <div style="grid-column: 1 / -1; text-align: center; padding: 20px;">Fetching rooms...</div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { fetchRooms, fetchRoomSchedule, checkAuth, getUser } from './src/api.js';
+    import { getSensorData } from './src/sensors.js';
+
+    // Global variable for filtering
+    let allRoomsElements = [];
+    // Store schedules to avoid re-fetching constantly if needed, 
+    // but for now we fetch periodically.
+    let roomSchedules = {};
+
+    // --- Menu Toggle ---
+    window.toggleMenu = function () {
+      document.getElementById('sideMenu').classList.toggle('active');
+    };
+
+    // --- Init Application ---
+    (async () => {
+      // 1. Auth Check
+      const status = await checkAuth();
+      if (!status.authenticated) {
+        window.location.href = 'login.html';
+        return;
+      }
+
+      // 2. User Info (Name in header)
+      try {
+        const userRes = await getUser();
+        if (userRes.success && userRes.user && userRes.user.name) {
+          const headerDiv = document.querySelector('header div strong');
+          if (headerDiv) headerDiv.textContent = userRes.user.name;
+        }
+      } catch (e) { console.error(e); }
+
+      // 3. Load Rooms
+      await initRooms();
+
+      // 4. Start Sensors Loop (Mock data)
+      setInterval(updateSensorValues, 5000);
+
+      // 5. Start Schedule Loop (Real data - every 30s)
+      updateSchedules();
+      setInterval(updateSchedules, 30000);
+    })();
+
+
+    async function initRooms() {
+      const container = document.getElementById('roomsContainer');
+
+      try {
+        const data = await fetchRooms();
+
+        if (data.success && data.rooms) {
+          // Clear loading message
+          container.innerHTML = '';
+
+          // Sort by name
+          let rooms = data.rooms.sort((a, b) => a.nom.localeCompare(b.nom));
+
+          // LIMIT TO 10
+          rooms = rooms.slice(0, 10);
+
+          rooms.forEach(room => {
+            const card = createRoomCard(room);
+            container.appendChild(card);
+          });
+
+          // Store reference for filtering
+          allRoomsElements = Array.from(document.querySelectorAll('.room-card'));
+
+          // Initial sensor update
+          updateSensorValues();
+        } else {
+          container.innerHTML = '<div style="grid-column: 1 / -1; color: red;">Error loading rooms.</div>';
+        }
+      } catch (e) {
+        console.error(e);
+        container.innerHTML = '<div style="grid-column: 1 / -1; color: red;">Network error. Check console.</div>';
+      }
+    }
+
+    function createRoomCard(room) {
+      const div = document.createElement('div');
+      div.className = 'room-card';
+
+      // Dataset attributes for filters/sorters
+      div.dataset.roomid = room.id;
+      div.dataset.name = room.nom.toLowerCase();
+      // Initial values
+      div.dataset.availability = 'free';
+      div.dataset.occupancy = '0';
+      div.dataset.temperature = '20';
+
+      // Structure identical to static version
+      div.innerHTML = `
+            <div class="room-info">
+                <strong>${room.nom}</strong>
+                <span class="status free">🟢 Free</span><br/>
+                <span class="occ-span">Occupancy: 0 | </span>
+                <span class="temp-span">Temp: --°C</span>
+                <span class="hum-span"> | Humidity: --%</span>
+                <div class="schedule-info" style="font-size: 0.8em; color: gray; margin-top:5px;"></div>
+            </div>
+            <button onclick="window.location.href='room.html?id=${room.id}&name=${encodeURIComponent(room.nom)}'">View Details</button>
+         `;
+      return div;
+    }
+
+    // --- Schedule Logic (Real sync) ---
+    async function updateSchedules() {
+      if (allRoomsElements.length === 0) return;
+
+      const now = new Date();
+
+      // Fetch for all current 10 rooms
+      // We do it sequentially or parallel? Parallel is better.
+      const promises = allRoomsElements.map(async (card) => {
+        const roomId = card.dataset.roomid;
+        const res = await fetchRoomSchedule(roomId);
+
+        if (res.success && res.events) {
+          // Check if any event is active NOW
+          const activeEvent = res.events.find(evt => {
+            const start = new Date(evt.start);
+            const end = new Date(evt.end);
+            return now >= start && now < end;
+          });
+
+          // Store status on card for the sensor loop to pick up (or update directly)
+          // We'll attach it to dataset for updateSensorValues to respect
+          if (activeEvent) {
+            card.dataset.realStatus = 'occupied';
+            card.dataset.currentClass = activeEvent.title || "Class";
+          } else {
+            card.dataset.realStatus = 'free'; // fallback to sensors
+            card.dataset.currentClass = "";
+          }
+        }
+      });
+
+      await Promise.all(promises);
+      // Trigger UI update immediately
+      updateSensorValues();
+    }
+
+    // --- Sensor Logic ---
+    function updateSensorValues() {
+      if (allRoomsElements.length === 0) return;
+
+      allRoomsElements.forEach(roomCard => {
+        const roomId = roomCard.dataset.roomid;
+        const sensor = getSensorData(roomId); // Mock data
+
+        const info = roomCard.querySelector('.room-info');
+
+        // Temp
+        const tempSpan = info.querySelector('.temp-span');
+        tempSpan.textContent = `Temp: ${sensor.temperature}°C`;
+        roomCard.dataset.temperature = sensor.temperature;
+
+        // Humidity
+        const humSpan = info.querySelector('.hum-span');
+        humSpan.textContent = ` | Humidity: ${sensor.humidity}%`;
+
+        // Occupancy / Status Logic
+        // PRIORITY: Schedule (Real) > Sensors (Mock)
+
+        let status = 'free';
+        let statusIcon = '🟢';
+        let statusText = 'Free';
+        let extraInfo = "";
+
+        // Check Real Schedule Status first
+        if (roomCard.dataset.realStatus === 'occupied') {
+          status = 'occupied';
+          statusIcon = '🔴';
+          statusText = 'Occupied';
+          extraInfo = roomCard.dataset.currentClass ? ` (${roomCard.dataset.currentClass})` : "";
+          // If supposed to be occupied, ensure occupancy > 0
+          if (sensor.occupancy < 5) sensor.occupancy = 10 + Math.floor(Math.random() * 20);
+        } else {
+          // STRICT SYNC requested: If no class, it is FREE.
+          // Override random mock occupancy to 0 or very low to match "Free"
+          status = 'free';
+          statusIcon = '🟢';
+          statusText = 'Free';
+          sensor.occupancy = 0; // Force 0 people if no class
+        }
+
+        // Update UI
+        const occSpan = info.querySelector('.occ-span');
+        occSpan.textContent = `Occupancy: ${sensor.occupancy} | `;
+        roomCard.dataset.occupancy = sensor.occupancy;
+
+        const statusSpan = info.querySelector('.status');
+        statusSpan.className = `status ${status}`;
+        statusSpan.textContent = `${statusIcon} ${statusText}`;
+        roomCard.dataset.availability = status;
+
+        // Optional: show class name if occupied by schedule
+        const schedDiv = info.querySelector('.schedule-info');
+        if (schedDiv) schedDiv.textContent = extraInfo;
+      });
+
+      applyFilters();
+    }
+
+    // --- Filter Logic ---
+    window.applyFilters = function () {
+      const searchText = document.getElementById('searchInput').value.toLowerCase();
+      const availability = document.getElementById('availabilityFilter').value;
+      const occupancySort = document.getElementById('occupancySort').value;
+      const tempSort = document.getElementById('temperatureSort').value;
+
+      // 1. Filter
+      let visibleRooms = allRoomsElements.filter(room => {
+        const name = room.dataset.name;
+        const status = room.dataset.availability;
+
+        const matchSearch = name.includes(searchText);
+        // Handle case where partial logic might map to occupied in filter
+        // or ensure availabilityFilter matches card.dataset.availability
+        const matchStatus = availability === "" || status === availability;
+        return matchSearch && matchStatus;
+      });
+
+      // 2. Sort
+      if (occupancySort) {
+        visibleRooms.sort((a, b) => {
+          const valA = parseFloat(a.dataset.occupancy);
+          const valB = parseFloat(b.dataset.occupancy);
+          return occupancySort === 'asc' ? valA - valB : valB - valA;
+        });
+      } else if (tempSort) {
+        visibleRooms.sort((a, b) => {
+          const valA = parseFloat(a.dataset.temperature);
+          const valB = parseFloat(b.dataset.temperature);
+          return tempSort === 'asc' ? valA - valB : valB - valA;
+        });
+      }
+
+      // 3. Render
+      const container = document.getElementById('roomsContainer');
+      // Hide all
+      allRoomsElements.forEach(r => r.style.display = 'none');
+
+      // Show filtered/sorted
+      visibleRooms.forEach(r => {
+        r.style.display = 'flex';
+        container.appendChild(r);
+      });
+    }
+
+  </script>
+
+</body>
+
+</html>

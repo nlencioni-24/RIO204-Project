@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Room Details</title>
+    <link rel="stylesheet" href="src/rooms.css" />
+    <style>
+        /* Extra styles for schedule list */
+        .schedule-card {
+            margin-top: 20px;
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .schedule-item {
+            padding: 8px 0;
+            border-bottom: 1px solid #eee;
+            font-size: 14px;
+        }
+
+        .schedule-item:last-child {
+            border-bottom: none;
+        }
+
+        .schedule-time {
+            color: #555;
+            font-weight: bold;
+        }
+
+        .schedule-title {
+            color: #333;
+            margin-left: 10px;
+        }
+
+        .no-events {
+            color: #888;
+            font-style: italic;
+            padding: 10px;
+            text-align: center;
+        }
+    </style>
+</head>
+
+<body>
+
+    <header>
+        <div class="back-btn" onclick="goHome()">⬅</div>
+        <h1 id="roomTitle">
+            Room Details
+            <span id="inBadge" style="display:none">🟢 IN</span>
+        </h1>
+    </header>
+
+    <div class="content">
+        <!-- Sensor Card -->
+        <div class="card">
+            <div class="row"><span>Availability</span><span id="availability" class="free">🟢 Free</span></div>
+            <div class="row"><span>Occupancy</span><span id="occupancy">0 people</span></div>
+            <div class="row"><span>Temperature</span><span id="temperature">--°C</span></div>
+            <div class="row"><span>Humidity</span><span id="humidity">--%</span></div>
+            <div class="row"><span>Light</span><span id="light">Good</span></div>
+            <div class="row"><span>Windows</span><span id="windows">Closed</span></div>
+            <div class="row"><span>AC / Heating</span><span id="ac">No</span></div>
+        </div>
+
+        <!-- Schedule Card (New) -->
+        <div class="schedule-card">
+            <h3>📅 Incoming Schedule</h3>
+            <div id="scheduleList">
+                <div class="no-events">Loading schedule...</div>
+            </div>
+        </div>
+
+        <!-- Main actions -->
+        <div class="buttons">
+            <button id="inRoomBtn" class="contribute" onclick="enterRoom()">I am in this room</button>
+            <button class="left-room" onclick="leaveRoom()">I left the room</button>
+            <button class="change" onclick="makeChange()">Make a change</button>
+        </div>
+    </div>
+
+    <!-- Toast -->
+    <div id="toast"></div>
+
+    <!-- Modal for occupancy -->
+    <div id="occupancyModal"
+        style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); justify-content:center; align-items:center; z-index:1000;">
+        <div style="background:white; padding:20px; border-radius:10px; text-align:center; min-width:280px;">
+            <h3>Enter new occupancy INCLUDING yourself</h3>
+            <input type="number" id="newOccupancyInput" min="1" placeholder="Number of people"
+                style="padding:8px; width:80%; margin-top:10px;">
+            <div style="margin-top:15px;">
+                <button onclick="submitOccupancyChange()"
+                    style="padding:8px 14px; margin-right:10px; border:none; border-radius:6px; background:#2ecc71; color:white; cursor:pointer;">Submit</button>
+                <button onclick="closeOccupancyModal()"
+                    style="padding:8px 14px; border:none; border-radius:6px; background:#e74c3c; color:white; cursor:pointer;">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { getSensorData } from './src/sensors.js';
+        import { fetchRoomSchedule } from './src/api.js';
+        import './src/rooms.js'; // Imports global functions
+
+        // Parse URL params
+        const params = new URLSearchParams(window.location.search);
+        const roomId = params.get('id');
+        const roomName = params.get('name') || `Room ${roomId}`;
+
+        // Update Title
+        document.getElementById('roomTitle').childNodes[0].nodeValue = roomName + " ";
+        document.title = roomName;
+
+        // Init Data Context
+        if (window.setCurrentRoomId) {
+            window.setCurrentRoomId(roomId);
+        }
+
+        // --- Sensors Logic for THIS room ---
+        window.updatePageSensors = function () {
+            if (!roomId) return;
+
+            const sensor = getSensorData(roomId);
+            document.getElementById('temperature').textContent = sensor.temperature + "°C";
+            document.getElementById('humidity').textContent = sensor.humidity + "%";
+
+            // Sync occupancy initially only
+            if (!window.occupancyInitialized) {
+                if (window.setCurrentOccupancy) window.setCurrentOccupancy(sensor.occupancy);
+                window.occupancyInitialized = true;
+            }
+            // Note: We don't override occupancy subsequently because user actions (I am here) 
+            // modify the 'currentOccupancy' global in rooms.js. 
+            // Real sensor hardware would override this, but for this app user input > random mock.
+        };
+
+        // Start sensor loop
+        updatePageSensors();
+        setInterval(updatePageSensors, 5000);
+
+        // --- Schedule Logic ---
+        async function loadSchedule() {
+            if (!roomId) return;
+
+            const listContainer = document.getElementById('scheduleList');
+
+            try {
+                const res = await fetchRoomSchedule(roomId);
+                if (res.success && res.events) {
+                    const now = new Date();
+
+                    // 1. Check for CURRENT active event for status sync
+                    const activeEvent = res.events.find(evt => {
+                        const start = new Date(evt.start);
+                        const end = new Date(evt.end);
+                        return now >= start && now < end;
+                    });
+
+                    if (activeEvent) {
+                        // Update Status to Occupied
+                        const availSpan = document.getElementById('availability');
+                        availSpan.className = 'occupied';
+                        availSpan.textContent = `🔴 Occupied (${activeEvent.title || activeEvent.type || 'Class'})`;
+
+                        // Force occupancy to reflect usage if sensor is low
+                        // (Optional, but user asked for sync)
+                        // Update Status to Occupied via Global Override
+                        window.currentScheduleClass = activeEvent.title || activeEvent.type || 'Class';
+
+                        // Trigger update immediately
+                        if (window.setCurrentOccupancy) {
+                            // Re-trigger display update logic from rooms.js
+                            // Assuming updateOccupancyDisplay is not directly exposed but triggered by setters
+                            // We can call setCurrentOccupancy with current value to force refresh
+                            // internal variable currentOccupancy is not accessible easily, so we rely on rooms.js internal state or UI update
+                            // Actually, since we imported './src/rooms.js', functions might be global? 
+                            // No, they are module scoped usually unless attached to window. 
+                            // But wait, rooms.js attached listeners globally?
+                            // rooms.js is NOT a module in script tag above? "type=module" imports it.
+                            // Checked rooms.js: it does NOT export. But it sets global window functions at end.
+                            // Let's assume window.setCurrentOccupancy triggers updateOccupancyDisplay.
+                            // So calling it with *some* value works? Or we need to expose updateOccupancyDisplay.
+                            // Wait, rooms.js: window.setCurrentOccupancy = function(val) { currentOccupancy = val; updateOccupancyDisplay(); };
+                            // So we need to know current occupancy to not reset it to 0.
+                            // We can get it from document if needed or just let it exist.
+                            // Better: We just set the flag. rooms.js will pick it up on next update.
+                            // But we want immediate update.
+                            // Let's force an update by calling setCurrentOccupancy with a dummy value found in DOM?
+                            const currentOcc = parseInt(document.getElementById('occupancy').textContent) || 0;
+                            window.setCurrentOccupancy(currentOcc);
+                        }
+                    } else {
+                        window.currentScheduleClass = null;
+                        const currentOcc = parseInt(document.getElementById('occupancy').textContent) || 0;
+                        if (window.setCurrentOccupancy) window.setCurrentOccupancy(currentOcc);
+                    }
+
+                    // 2. Filter for FUTURE events
+                    const futureEvents = res.events
+                        .filter(e => new Date(e.end) > now)
+                        .sort((a, b) => new Date(a.start) - new Date(b.start));
+
+                    if (futureEvents.length === 0) {
+                        listContainer.innerHTML = '<div class="no-events">No upcoming classes for the next 7 days.</div>';
+                        return;
+                    }
+
+                    listContainer.innerHTML = futureEvents.slice(0, 10).map(e => {
+                        const start = new Date(e.start);
+                        const end = new Date(e.end);
+
+                        // Nice date formatting "Tue 25/01 10:00 - 12:00"
+                        const dateOpt = { weekday: 'short', day: 'numeric', month: 'numeric' };
+                        const dateStr = start.toLocaleDateString('fr-FR', dateOpt);
+                        const timeStr = `${start.getHours()}:${start.getMinutes().toString().padStart(2, '0')} - ${end.getHours()}:${end.getMinutes().toString().padStart(2, '0')}`;
+
+                        return `
+                    <div class="schedule-item">
+                        <span class="schedule-time">${dateStr} ${timeStr}</span><br>
+                        <span class="schedule-title" style="margin-left:0; font-weight:bold;">${e.title || e.type || 'Réservation'}</span>
+                    </div>
+                   `;
+                    }).join('');
+
+                } else {
+                    listContainer.innerHTML = '<div class="no-events">Could not load schedule.</div>';
+                }
+            } catch (e) {
+                console.error(e);
+                listContainer.innerHTML = '<div class="no-events">Error loading schedule.</div>';
+            }
+        }
+
+        // Load schedule once on page load
+        loadSchedule();
+
+    </script>
+
+</body>
+
+</html>

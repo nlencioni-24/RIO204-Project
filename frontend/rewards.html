@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Rewards</title>
+<link rel="stylesheet" href="src/rooms.css" />
+<link rel="stylesheet" href="src/rewards.css" />
+</head>
+
+<body>
+
+<header>
+    <div class="back-btn" onclick="goHome()">⬅</div>
+    <h1>🏆 Rewards</h1>
+</header>
+
+<div class="content">
+  <div class="card">
+    <div class="row">
+      <span>Your Score</span>
+      <span id="score">0 pts</span>
+    </div>
+
+    <div class="row badge" id="badge1"><span>🥉 Contributor</span><span>10 pts</span></div>
+    <div class="row badge locked" id="badge2"><span>🥈 Active Helper</span><span>50 pts</span></div>
+    <div class="row badge locked" id="badge3"><span>🥇 Super User</span><span>100 pts</span></div>
+    <div class="row badge locked" id="badge4"><span>🏆 Campus Hero</span><span>200 pts</span></div>
+  </div>
+</div>
+
+<script>
+function goHome() {
+  window.location.href = "index.html";
+}
+
+// Récupérer le score global
+const score = parseInt(localStorage.getItem("userScore")) || 0;
+document.getElementById("score").innerText = score + " pts";
+
+// Affichage badges
+if (score >= 10) {
+  document.getElementById("badge1").classList.remove("locked");
+  document.getElementById("badge1").classList.add("unlocked");
+}
+if (score >= 50) {
+  document.getElementById("badge2").classList.remove("locked");
+  document.getElementById("badge2").classList.add("unlocked");
+}
+if (score >= 100) {
+  document.getElementById("badge3").classList.remove("locked");
+  document.getElementById("badge3").classList.add("unlocked");
+}
+if (score >= 200) {
+  document.getElementById("badge4").classList.remove("locked");
+  document.getElementById("badge4").classList.add("unlocked");
+}
+</script>
+
+</body>
+</html>

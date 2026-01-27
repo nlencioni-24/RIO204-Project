@@ -1,0 +1,194 @@
+/* ======================== */
+/* Base Styles              */
+/* ======================== */
+body {
+  margin: 0;
+  font-family: Arial, Helvetica, sans-serif;
+  background: #f4f6f8;
+}
+
+/* Header */
+header {
+  background: white;
+  padding: 14px 20px;
+  border-bottom: 1px solid #ddd;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  position: relative;
+  z-index: 1000;
+}
+
+.back-btn {
+  cursor: pointer;
+  font-size: 40px;
+  font-weight: bold;
+  user-select: none;
+}
+
+header h1 {
+  flex: 1;
+  text-align: center;
+  margin: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+}
+
+#inBadge {
+  display: none;
+  font-size: 40px;
+  color: #2ecc71;
+}
+
+/* Content Card */
+.content {
+  max-width: 600px;
+  width: 100%;
+  margin: 20px auto;       /* centré horizontalement */
+  padding: 20px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  align-items: center;     /* centre le contenu à l'intérieur */
+}
+
+.card {
+  background: white;
+  border-radius: 10px;
+  padding: 20px;
+  box-sizing: border-box;
+  width: 100%;
+}
+
+/* Rows */
+.row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px solid #eee;
+  word-break: break-word;
+}
+
+.row:last-child { border-bottom: none; }
+
+.free { color: #2ecc71; font-weight: bold; }
+.partial { color: #f39c12; font-weight: bold; }
+.occupied { color: #e74c3c; font-weight: bold; }
+
+/* Buttons */
+.buttons {
+  margin-top: 20px;
+  display: flex;
+  gap: 12px;
+  justify-content: center;      /* centre horizontalement les boutons */
+  flex-wrap: wrap;              /* s’adapte si bouton trop large */
+}
+
+.buttons button {
+  flex: 1;
+  max-width: 200px;             /* limite la largeur des boutons */
+  padding: 12px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  font-size: 15px;
+}
+
+/* Button colors */
+.contribute { background: #2ecc71; color: white; }
+.in-room-active { background: #27ae60; color: white; cursor: default; }
+.left-room { background: #e74c3c; color: white; }
+.left-room:active { background: #c0392b; }
+.change { background: #f39c12; color: white; }
+.change:active { background: #d35400; }
+
+/* Favorite */
+.favorite-container {
+  margin-top: 15px;
+  display: flex;
+  justify-content: center;
+}
+
+.favorite {
+  padding: 12px 20px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  font-size: 15px;
+  background: #7f8c8d;
+  color: white;
+}
+
+/* Toast notification */
+#toast {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  min-width: 220px;
+  background-color: #2ecc71;
+  color: white;
+  padding: 12px 20px;
+  border-radius: 8px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.5s, transform 0.5s;
+  transform: translateY(-20px);
+  z-index: 1000;
+  font-weight: bold;
+}
+
+#toast.show {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateY(0);
+}
+
+/* ======================== */
+/* Responsive Mobile        */
+/* ======================== */
+@media (max-width: 767px) {
+  header h1 {
+    font-size: 16px;
+  }
+
+  .content {
+    margin: 10px auto;
+    padding: 16px;
+    align-items: center;        /* centre le contenu sur mobile */
+  }
+
+  .card {
+    padding: 16px;
+  }
+
+  .row {
+    flex-direction: column;
+    align-items: flex-start;
+    width: 100%;               /* assure que chaque row prend toute la largeur */
+  }
+
+  .row span:last-child {
+    margin-top: 4px;
+  }
+
+  .buttons {
+    flex-direction: column;
+    align-items: center;       /* centre les boutons sur mobile */
+    width: 100%;
+  }
+
+  .buttons button {
+    width: 100%;               /* boutons prennent toute la largeur du container */
+    max-width: 100%;
+    font-size: 16px;
+  }
+
+  #inBadge {
+    font-size: 32px;
+  }
+}
+

@@ -7,10 +7,12 @@ import re
 import os
 import requests
 import keyring
+from bs4 import BeautifulSoup
 
 # Configuration
 SERVICE_ID = "RIO_PROJECT_SYNAPSES"
 SYNAPSES_API_URL = "https://synapses.telecom-paris.fr/salles/events-fc-scheduler"
+SYNAPSES_HOME_URL = "https://synapses.telecom-paris.fr/"
 
 HEADERS = {
     "Accept": "application/json, text/javascript, */*; q=0.01",
@@ -20,6 +22,7 @@ HEADERS = {
     "User-Agent": "Mozilla/5.0",
     "X-Requested-With": "XMLHttpRequest",
 }
+
 
 def get_rooms_file_path():
     """Retourne le chemin vers le fichier de données des salles."""
@@ -100,7 +103,7 @@ def delete_cookies():
         keyring.delete_password(SERVICE_ID, "COOKIES_JSON")
         return True
     except keyring.errors.PasswordDeleteError:
-        return True  # Déjà supprimé
+        return True
     except Exception as e:
         print(f"Erreur suppression cookies: {e}")
         return False
@@ -109,6 +112,7 @@ def delete_cookies():
 def check_auth_status():
     """Vérifie si des cookies valides sont stockés."""
     return load_cookies() is not None
+
 
 def fetch_schedule(room_id, start_date, end_date):
     """Récupère le planning d'une salle depuis l'API Synapses."""
@@ -158,6 +162,35 @@ def fetch_schedule(room_id, start_date, end_date):
         return {"error": f"Erreur réseau: {str(e)}", "events": []}
     except Exception as e:
         return {"error": f"Erreur inattendue: {str(e)}", "events": []}
+
+
+def get_user_info():
+    """Récupère les informations de l'utilisateur connecté via scraping."""
+    cookies = load_cookies()
+    if not cookies:
+        return None
+        
+    try:
+        response = requests.get(SYNAPSES_HOME_URL, cookies=cookies, timeout=10)
+        response.raise_for_status()
+        
+        soup = BeautifulSoup(response.content, 'html.parser')
+        
+        avatar_container = soup.find(id="user-avatar-container")
+        if not avatar_container:
+            return None
+            
+        header = avatar_container.select_one(".dropdown-header")
+        if header:
+            raw_text = header.get_text(strip=True)
+            cleaned_text = raw_text.replace("(ETU)", "").strip()
+            return {"name": cleaned_text}
+            
+        return None
+        
+    except Exception as e:
+        print(f"Erreur scraping user info: {e}")
+        return None
 
 load_cookies_securely = load_cookies
 save_cookies_securely = save_cookies
