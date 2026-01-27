@@ -1,7 +1,6 @@
 cookies.json
 venv/
 __pycache__/
-AGENT.md
-app/
+README.md
 .DS_Store
 

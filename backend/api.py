@@ -1,48 +1,31 @@
+"""
+API Flask pour le projet Synapses Room Scheduler.
+Fournit les endpoints pour gérer les salles, les plannings et l'authentification.
+"""
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 from datetime import datetime, timedelta
 import room_service
-from flasgger import Swagger
+import headless_auth
 
 app = Flask(__name__)
 CORS(app)
-swagger = Swagger(app)
+
 
 def get_default_dates():
-    """Get default date range (today to 2 weeks from now)."""
+    """Retourne la plage de dates par défaut (aujourd'hui + 2 semaines)."""
     today = datetime.now()
     end = today + timedelta(days=14)
     return today.strftime("%Y-%m-%d"), end.strftime("%Y-%m-%d")
 
+
+# =============================================================================
+# Endpoints Salles
+# =============================================================================
+
 @app.route('/api/rooms', methods=['GET'])
 def get_rooms():
-    """
-    Get list of all available rooms.
-    ---
-    tags:
-      - Rooms
-    responses:
-      200:
-        description: List of rooms retrieved successfully
-        schema:
-          type: object
-          properties:
-            success:
-              type: boolean
-            rooms:
-              type: array
-              items:
-                type: object
-                properties:
-                  id:
-                    type: integer
-                  name:
-                    type: string
-            count:
-              type: integer
-      500:
-        description: Internal Server Error
-    """
+    """Retourne la liste de toutes les salles disponibles."""
     try:
         rooms = room_service.get_unique_rooms()
         return jsonify({
@@ -57,35 +40,10 @@ def get_rooms():
             "rooms": []
         }), 500
 
+
 @app.route('/api/schedule/<int:room_id>', methods=['GET'])
 def get_room_schedule(room_id):
-    """
-    Get schedule for a specific room.
-    ---
-    tags:
-      - Schedules
-    parameters:
-      - name: room_id
-        in: path
-        type: integer
-        required: true
-        description: The ID of the room
-      - name: start
-        in: query
-        type: string
-        description: Start date (YYYY-MM-DD)
-      - name: end
-        in: query
-        type: string
-        description: End date (YYYY-MM-DD)
-    responses:
-      200:
-        description: Schedule retrieved successfully
-      401:
-        description: Authentication failed
-      500:
-        description: Internal Server Error
-    """
+    """Retourne le planning d'une salle spécifique."""
     start_date = request.args.get('start')
     end_date = request.args.get('end')
     
@@ -94,12 +52,14 @@ def get_room_schedule(room_id):
     
     try:
         result = room_service.fetch_schedule(room_id, start_date, end_date)
+        
         if "error" in result:
+            status_code = 401 if "authentification" in result.get("error", "").lower() else 500
             return jsonify({
                 "success": False,
                 "room_id": room_id,
                 **result
-            }), 401 if "authentication" in result.get("error", "").lower() else 500
+            }), status_code
         
         return jsonify({
             "success": True,
@@ -115,126 +75,69 @@ def get_room_schedule(room_id):
             "events": []
         }), 500
 
-@app.route('/api/schedule', methods=['GET'])
-def get_all_schedules():
-    """
-    Get schedule for all rooms.
-    ---
-    tags:
-      - Schedules
-    parameters:
-      - name: start
-        in: query
-        type: string
-        description: Start date (YYYY-MM-DD)
-      - name: end
-        in: query
-        type: string
-        description: End date (YYYY-MM-DD)
-    responses:
-      200:
-        description: All schedules retrieved successfully
-      500:
-        description: Internal Server Error
-    """
-    start_date = request.args.get('start')
-    end_date = request.args.get('end')
-    
-    if not start_date or not end_date:
-        start_date, end_date = get_default_dates()
-    
-    try:
-        rooms = room_service.get_unique_rooms()
-        all_schedules = []
-        
-        for room in rooms:
-            result = room_service.fetch_schedule(room['id'], start_date, end_date)
-            all_schedules.append({
-                "room": room,
-                "schedule": result
-            })
-        
-        return jsonify({
-            "success": True,
-            "start_date": start_date,
-            "end_date": end_date,
-            "schedules": all_schedules
-        })
-    except Exception as e:
-        return jsonify({
-            "success": False,
-            "error": str(e)
-        }), 500
+
+# =============================================================================
+# Endpoints Authentification
+# =============================================================================
 
 @app.route('/api/auth/status', methods=['GET'])
 def auth_status():
-    """
-    Check if authentication cookies are available.
-    ---
-    tags:
-      - Authentication
-    responses:
-      200:
-        description: Auth status returned
-        schema:
-          type: object
-          properties:
-            authenticated:
-              type: boolean
-            message:
-              type: string
-    """
+    """Vérifie si l'utilisateur est authentifié."""
     has_cookies = room_service.check_auth_status()
     return jsonify({
         "authenticated": has_cookies,
         "message": "Cookies disponibles" if has_cookies else "Authentification requise"
     })
 
-@app.route('/api/auth/refresh', methods=['POST'])
-def auth_refresh():
-    """
-    Refresh authentication cookies.
-    ---
-    tags:
-      - Authentication
-    responses:
-      200:
-        description: Auth refreshed successfully
-      401:
-        description: Auth failed
-      500:
-        description: Internal Server Error
-    """
+
+@app.route('/api/auth/login', methods=['POST'])
+def auth_login():
+    """Authentifie l'utilisateur avec ses identifiants."""
+    data = request.get_json()
+    username = data.get('username')
+    password = data.get('password')
+    
+    if not username or not password:
+        return jsonify({
+            "success": False, 
+            "message": "Identifiant et mot de passe requis"
+        }), 400
+        
     try:
-        success = room_service.refresh_auth()
-        if success:
+        cookies = headless_auth.authenticate(username, password)
+        if cookies:
+            room_service.save_cookies(cookies)
             return jsonify({
-                "success": True,
-                "message": "Authentification réussie, cookies sauvegardés"
+                "success": True, 
+                "message": "Connexion réussie"
             })
         else:
             return jsonify({
-                "success": False,
-                "message": "Échec de l'authentification"
+                "success": False, 
+                "message": "Identifiants invalides"
             }), 401
     except Exception as e:
         return jsonify({
-            "success": False,
+            "success": False, 
             "error": str(e)
         }), 500
 
+
+@app.route('/api/auth/logout', methods=['POST'])
+def auth_logout():
+    """Déconnecte l'utilisateur en supprimant les cookies."""
+    room_service.delete_cookies()
+    return jsonify({
+        "success": True,
+        "message": "Déconnexion réussie"
+    })
+
+
 @app.route('/api/health', methods=['GET'])
 def health():
-    """
-    Health check endpoint.
-    ---
-    tags:
-      - Health
-    responses:
-      200:
-        description: API is healthy
-    """
+    """Endpoint de vérification de santé de l'API."""
     return jsonify({"status": "ok"})
+
 
 if __name__ == '__main__':
     app.run(debug=True, port=5001, host='0.0.0.0')
