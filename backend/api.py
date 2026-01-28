@@ -2,7 +2,7 @@
 API Flask pour le projet Synapses Room Scheduler.
 Fournit les endpoints pour gérer les salles, les plannings et l'authentification.
 """
-from flask import Flask, jsonify, request, send_from_directory
+from flask import Flask, jsonify, request, send_from_directory, session
 from flask_cors import CORS
 from datetime import datetime, timedelta
 import room_service
@@ -10,7 +10,8 @@ import headless_auth
 import os
 
 app = Flask(__name__, static_folder='../frontend', static_url_path='')
-CORS(app)
+app.secret_key = 'super_secret_key_rio_project_2024'
+CORS(app, supports_credentials=True)
 
 
 def get_default_dates():
@@ -60,8 +61,10 @@ def get_room_schedule(room_id):
     if not start_date or not end_date:
         start_date, end_date = get_default_dates()
     
+    cookies = session.get('synapses_cookies')
+
     try:
-        result = room_service.fetch_schedule(room_id, start_date, end_date)
+        result = room_service.fetch_schedule(room_id, start_date, end_date, cookies)
         
         if "error" in result:
             status_code = 401 if "authentification" in result.get("error", "").lower() else 500
@@ -100,15 +103,17 @@ def get_all_schedules():
         start_date = today.strftime("%Y-%m-%d")
         end_date = today.strftime("%Y-%m-%d")
     
+    cookies = session.get('synapses_cookies')
+
     try:
         rooms = room_service.get_unique_rooms()
         all_schedules = []
         
         for room in rooms:
             try:
-                result = room_service.fetch_schedule(room['id'], start_date, end_date)
+                result = room_service.fetch_schedule(room['id'], start_date, end_date, cookies)
                 if "error" in result and "authentification" in result["error"].lower():
-                    return jsonify({"success": False, "error": "Authentification requise"}), 401
+                    pass
                 
                 all_schedules.append({
                     "room": room,
@@ -131,21 +136,18 @@ def get_all_schedules():
 @app.route('/api/auth/status', methods=['GET'])
 def auth_status():
     """Vérifie si l'utilisateur est authentifié."""
-    has_cookies = room_service.check_auth_status()
-    user_info = None
-    if has_cookies:
-        pass
-        
+    has_cookies = 'synapses_cookies' in session
     return jsonify({
         "authenticated": has_cookies,
-        "message": "Cookies disponibles" if has_cookies else "Authentification requise"
+        "message": "Session active" if has_cookies else "Authentification requise"
     })
 
 @app.route('/api/user', methods=['GET'])
 def get_user():
     """Retourne les infos de l'utilisateur scrappées depuis Synapses."""
+    cookies = session.get('synapses_cookies')
     try:
-        info = room_service.get_user_info()
+        info = room_service.get_user_info(cookies)
         if info:
             return jsonify({
                 "success": True, 
@@ -179,7 +181,8 @@ def auth_login():
     try:
         cookies = headless_auth.authenticate(username, password)
         if cookies:
-            room_service.save_cookies(cookies)
+            session['synapses_cookies'] = cookies
+            session.permanent = True # La session expire après 31 jours par défaut
             return jsonify({
                 "success": True, 
                 "message": "Connexion réussie"
@@ -199,7 +202,7 @@ def auth_login():
 @app.route('/api/auth/logout', methods=['POST'])
 def auth_logout():
     """Déconnecte l'utilisateur en supprimant les cookies."""
-    room_service.delete_cookies()
+    session.pop('synapses_cookies', None)
     return jsonify({
         "success": True,
         "message": "Déconnexion réussie"
@@ -214,3 +217,4 @@ def health():
 
 if __name__ == '__main__':
     app.run(debug=True, port=5001, host='0.0.0.0')
+

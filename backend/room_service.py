@@ -6,7 +6,7 @@ import json
 import re
 import os
 import requests
-import keyring
+
 from bs4 import BeautifulSoup
 
 # Configuration
@@ -75,49 +75,10 @@ def get_unique_rooms():
             seen_ids.add(room['id'])
     return unique
 
-def load_cookies():
-    """Charge les cookies d'authentification depuis le keyring."""
-    try:
-        cookies_json = keyring.get_password(SERVICE_ID, "COOKIES_JSON")
-        if cookies_json:
-            return json.loads(cookies_json)
-        return None
-    except Exception as e:
-        print(f"Erreur chargement cookies: {e}")
-        return None
 
 
-def save_cookies(cookies):
-    """Sauvegarde les cookies d'authentification dans le keyring."""
-    try:
-        keyring.set_password(SERVICE_ID, "COOKIES_JSON", json.dumps(cookies))
-        return True
-    except Exception as e:
-        print(f"Erreur sauvegarde cookies: {e}")
-        return False
-
-
-def delete_cookies():
-    """Supprime les cookies du keyring."""
-    try:
-        keyring.delete_password(SERVICE_ID, "COOKIES_JSON")
-        return True
-    except keyring.errors.PasswordDeleteError:
-        return True
-    except Exception as e:
-        print(f"Erreur suppression cookies: {e}")
-        return False
-
-
-def check_auth_status():
-    """Vérifie si des cookies valides sont stockés."""
-    return load_cookies() is not None
-
-
-def fetch_schedule(room_id, start_date, end_date):
+def fetch_schedule(room_id, start_date, end_date, cookies=None):
     """Récupère le planning d'une salle depuis l'API Synapses."""
-    cookies = load_cookies()
-    
     if not cookies:
         return {"error": "Authentification requise", "events": []}
     
@@ -164,9 +125,8 @@ def fetch_schedule(room_id, start_date, end_date):
         return {"error": f"Erreur inattendue: {str(e)}", "events": []}
 
 
-def get_user_info():
+def get_user_info(cookies=None):
     """Récupère les informations de l'utilisateur connecté via scraping."""
-    cookies = load_cookies()
     if not cookies:
         return None
         
@@ -192,5 +152,3 @@ def get_user_info():
         print(f"Erreur scraping user info: {e}")
         return None
 
-load_cookies_securely = load_cookies
-save_cookies_securely = save_cookies
