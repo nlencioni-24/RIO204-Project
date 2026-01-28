@@ -7,11 +7,22 @@ from flask_cors import CORS
 from datetime import datetime, timedelta
 import room_service
 import headless_auth
+import headless_auth
 import os
+from models import db, UserReward, RoomStatus
 
 app = Flask(__name__, static_folder='../frontend', static_url_path='')
 app.secret_key = 'super_secret_key_rio_project_2024'
 CORS(app, supports_credentials=True)
+
+
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:////app/data/rewards.db'
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
+db.init_app(app)
+
+with app.app_context():
+    db.create_all()
 
 
 def get_default_dates():
@@ -213,6 +224,117 @@ def auth_logout():
 def health():
     """Endpoint de vérification de santé de l'API."""
     return jsonify({"status": "ok"})
+
+
+
+@app.route('/api/rewards', methods=['GET'])
+def get_rewards():
+    """Récupère les points de l'utilisateur connecté."""
+    cookies = session.get('synapses_cookies')
+    user_info = room_service.get_user_info(cookies)
+    
+    if not user_info or not user_info.get('name'):
+         return jsonify({"success": False, "message": "User not identified"}), 401
+
+    username = user_info['name']
+    
+    reward = UserReward.query.filter_by(username=username).first()
+    points = reward.points if reward else 0
+    
+    return jsonify({
+        "success": True, 
+        "points": points,
+        "username": username
+    })
+
+@app.route('/api/rewards/add', methods=['POST'])
+def add_rewards():
+    """Ajoute des points à l'utilisateur."""
+    cookies = session.get('synapses_cookies')
+    user_info = room_service.get_user_info(cookies)
+    
+    if not user_info or not user_info.get('name'):
+        return jsonify({"success": False, "message": "User not identified"}), 401
+
+    username = user_info['name']
+    data = request.get_json()
+    points_to_add = data.get('points', 0)
+    
+    #Sqlite pour pas de PostGres trop loud
+    reward = UserReward.query.filter_by(username=username).first()
+    if not reward:
+        reward = UserReward(username=username, points=points_to_add)
+        db.session.add(reward)
+    else:
+        reward.points += points_to_add
+    
+    db.session.commit()
+    
+    return jsonify({
+        "success": True,
+        "points": reward.points,
+        "added": points_to_add
+    })
+
+@app.route('/api/rewards/leaderboard', methods=['GET'])
+def get_leaderboard():
+    """Retourne la liste de tous les utilisateurs et leurs scores."""
+    rewards = UserReward.query.order_by(UserReward.points.desc()).all()
+    return jsonify({
+        "success": True,
+        "leaderboard": [r.to_dict() for r in rewards]
+    })
+
+
+@app.route('/api/room/<int:room_id>/status', methods=['GET'])
+def get_room_status(room_id):
+    """Retourne l'état actuel (occupation) de la salle."""
+    status = RoomStatus.query.get(room_id)
+    occupancy = status.occupancy if status else 0
+    return jsonify({
+        "success": True,
+        "room_id": room_id,
+        "occupancy": occupancy
+    })
+
+@app.route('/api/rooms/status', methods=['GET'])
+def get_all_rooms_status():
+    """Retourne l'occupation de toutes les salles."""
+    statuses = RoomStatus.query.all()
+    status_map = {s.room_id: s.occupancy for s in statuses}
+    return jsonify({
+        "success": True,
+        "statuses": status_map
+    })
+
+@app.route('/api/room/<int:room_id>/occupancy', methods=['POST'])
+def update_room_occupancy(room_id):
+    """Met à jour l'occupation de la salle."""
+    data = request.get_json()
+    action = data.get('action')
+    value = data.get('value')
+    
+    status = RoomStatus.query.get(room_id)
+    if not status:
+        status = RoomStatus(room_id=room_id, occupancy=0)
+        db.session.add(status)
+    
+    if action == 'enter':
+        status.occupancy += 1
+    elif action == 'leave':
+        if status.occupancy > 0:
+            status.occupancy -= 1
+    elif action == 'set':
+        if value is not None:
+             status.occupancy = max(0, int(value))
+             
+    db.session.commit()
+    
+    return jsonify({
+        "success": True,
+        "room_id": room_id,
+        "occupancy": status.occupancy
+    })
 
 
 if __name__ == '__main__':

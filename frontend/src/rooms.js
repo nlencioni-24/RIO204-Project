@@ -13,10 +13,13 @@ function updateOccupancyDisplay() {
 
   // Priority to Schedule
   if (window.currentScheduleClass) {
-    availabilityElem.textContent = "🔴 Occupied (" + window.currentScheduleClass + ")";
-    availabilityElem.className = "occupied";
+    if (availabilityElem) {
+      availabilityElem.textContent = "🔴 Occupied (" + window.currentScheduleClass + ")";
+      availabilityElem.className = "occupied";
+    }
     return;
   }
+
 
   if (currentOccupancy === 0) {
     availabilityElem.textContent = "🟢 Free";
@@ -40,14 +43,30 @@ function showToast(message, color = "#2ecc71") {
 }
 
 // --- Reward function ---
-function addRewardPoints(points) {
-  let score = parseInt(localStorage.getItem("userScore")) || 0;
-  score += points;
-  localStorage.setItem("userScore", score);
-  return score;
+// --- Reward function ---
+async function addRewardPoints(points) {
+  try {
+    const res = await fetch('/api/rewards/add', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ points: points })
+    });
+    const data = await res.json();
+    if (data.success) {
+      return data.points;
+    } else {
+      console.warn("Could not add points:", data.message);
+      // Fallback local or return 0
+      return 0; // Or keep local storage as fallback? No, requirement is DB.
+    }
+  } catch (e) {
+    console.error("Error adding points:", e);
+    return 0;
+  }
 }
 
 function showBadge(score) {
+  // ... (Keep existing logic, maybe fetch badges from DB later, but for now local checks on score are fine if we get correct score)
   let badgesSeen = JSON.parse(localStorage.getItem("badgesSeen")) || [];
 
   if (score >= 10 && !badgesSeen.includes("🥉 Contributor")) {
@@ -71,31 +90,61 @@ function showBadge(score) {
 }
 
 // --- Boutons "I am in / I left" ---
-function enterRoom() {
-  currentOccupancy++;
-  updateOccupancyDisplay();
-  inBadge.style.display = "inline";
-  inRoomBtn.textContent = "✅ In the room";
-  inRoomBtn.disabled = true;
-  inRoomBtn.classList.add("in-room-active");
-
-  // Ajouter 10 points au score global
-  let score = addRewardPoints(10);
-
-  // Afficher notification toast
-  showToast(`🎉+10 points! Total score: ${score}`);
-
-  // Vérifier badge
-  showBadge(score);
+// --- API Wrapper for Occupancy ---
+async function updateServerOccupancy(action, value = null) {
+  if (!window.currentRoomId) return;
+  try {
+    const res = await fetch(`/api/room/${window.currentRoomId}/occupancy`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: action, value: value })
+    });
+    const data = await res.json();
+    if (data.success) {
+      if (currentOccupancy !== data.occupancy) {
+        currentOccupancy = data.occupancy;
+        updateOccupancyDisplay();
+      }
+    }
+  } catch (e) {
+    console.error("Error updating occupancy:", e);
+  }
 }
 
-function leaveRoom() {
-  if (currentOccupancy > 0) currentOccupancy--;
-  updateOccupancyDisplay();
-  inBadge.style.display = "none";
-  inRoomBtn.textContent = "I am in this room";
-  inRoomBtn.disabled = false;
-  inRoomBtn.classList.remove("in-room-active");
+// --- Boutons "I am in / I left" ---
+async function enterRoom() {
+  await updateServerOccupancy('enter');
+
+  if (inBadge) inBadge.style.display = "inline";
+  if (inRoomBtn) {
+    inRoomBtn.textContent = "✅ In the room";
+    inRoomBtn.disabled = true;
+    inRoomBtn.classList.add("in-room-active");
+  }
+
+  // Ajouter 10 points au score global
+  let score = await addRewardPoints(10);
+
+  if (score > 0) {
+    // Afficher notification toast
+    showToast(`🎉+10 points! Total score: ${score}`);
+
+    // Vérifier badge
+    showBadge(score);
+  } else {
+    showToast(`🎉 Thanks for contributing! (Login to earn points)`);
+  }
+}
+
+async function leaveRoom() {
+  await updateServerOccupancy('leave');
+
+  if (inBadge) inBadge.style.display = "none";
+  if (inRoomBtn) {
+    inRoomBtn.textContent = "I am in this room";
+    inRoomBtn.disabled = false;
+    inRoomBtn.classList.remove("in-room-active");
+  }
 }
 
 // --- Make a change ---
@@ -115,16 +164,15 @@ function closeOccupancyModal() {
 }
 
 // Valider le nouveau nombre
-function submitOccupancyChange() {
+async function submitOccupancyChange() {
   const input = document.getElementById("newOccupancyInput");
   let newOccupancy = parseInt(input.value);
-  if (!isNaN(newOccupancy) && newOccupancy >= 1) {
-    currentOccupancy = newOccupancy;
-    updateOccupancyDisplay();
+  if (!isNaN(newOccupancy) && newOccupancy >= 0) {
+    await updateServerOccupancy('set', newOccupancy);
     showToast(`✅ Occupancy updated to ${newOccupancy} people`);
     closeOccupancyModal();
   } else {
-    showToast("❌ Please enter a valid number >= 1", "#e74c3c");
+    showToast("❌ Please enter a valid number >= 0", "#e74c3c");
   }
 }
 
@@ -133,10 +181,30 @@ function submitOccupancyChange() {
 updateOccupancyDisplay();
 
 // --- Exposed logic for dynamic rooms ---
+// --- Exposed logic for dynamic rooms ---
 window.setCurrentRoomId = function (id) {
-  // Current logic doesn't use ID much except logic, can add here if needed
+  window.currentRoomId = id;
   console.log("Room context set to:", id);
+  // Initial fetch
+  fetchRoomStatus();
 };
+
+async function fetchRoomStatus() {
+  if (!window.currentRoomId) return;
+  try {
+    const res = await fetch(`/api/room/${window.currentRoomId}/status`);
+    const data = await res.json();
+    if (data.success && data.occupancy !== undefined) {
+      if (currentOccupancy !== data.occupancy) {
+        currentOccupancy = data.occupancy;
+        updateOccupancyDisplay();
+      }
+    }
+  } catch (e) { console.error(e); }
+}
+
+// Poll every 5 seconds
+setInterval(fetchRoomStatus, 5000);
 
 // --- Expose functions to global scope for HTML onclick attributes ---
 window.goHome = goHome;

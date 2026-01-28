@@ -1,61 +1,108 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-<meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Rewards</title>
-<link rel="stylesheet" href="src/rooms.css" />
-<link rel="stylesheet" href="src/rewards.css" />
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Rewards</title>
+  <link rel="stylesheet" href="src/rooms.css" />
+  <link rel="stylesheet" href="src/rewards.css" />
 </head>
 
 <body>
 
-<header>
+  <header>
     <div class="back-btn" onclick="goHome()">⬅</div>
     <h1>🏆 Rewards</h1>
-</header>
+  </header>
 
-<div class="content">
-  <div class="card">
-    <div class="row">
-      <span>Your Score</span>
-      <span id="score">0 pts</span>
+  <div class="content">
+    <div class="card" style="text-align: center; padding: 30px;">
+      <h2 style="margin: 0; font-size: 1.2em; color: #555;">Your Stats</h2>
+      <div style="font-size: 3em; font-weight: bold; color: #333; margin: 10px 0;" id="score">0</div>
+      <div style="color: #888;">points earned</div>
     </div>
 
-    <div class="row badge" id="badge1"><span>🥉 Contributor</span><span>10 pts</span></div>
-    <div class="row badge locked" id="badge2"><span>🥈 Active Helper</span><span>50 pts</span></div>
-    <div class="row badge locked" id="badge3"><span>🥇 Super User</span><span>100 pts</span></div>
-    <div class="row badge locked" id="badge4"><span>🏆 Campus Hero</span><span>200 pts</span></div>
+    <div class="schedule-card" style="margin-top: 20px;">
+      <h3>🏆 Leaderboard</h3>
+      <table style="width:100%; border-collapse: collapse; margin-top:10px;">
+        <thead>
+          <tr style="background:#f9f9f9; border-bottom:2px solid #eee;">
+            <th style="text-align:left; padding:12px 8px; color: #555;">User</th>
+            <th style="text-align:right; padding:12px 8px; color: #555;">Score</th>
+          </tr>
+        </thead>
+        <tbody id="leaderboardBody">
+          <tr>
+            <td colspan="2" style="text-align:center; padding:20px; color: #999;">Loading rankings...</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
   </div>
-</div>
 
-<script>
-function goHome() {
-  window.location.href = "index.html";
-}
+  <script>
+    function goHome() {
+      window.location.href = "index.html";
+    }
 
-// Récupérer le score global
-const score = parseInt(localStorage.getItem("userScore")) || 0;
-document.getElementById("score").innerText = score + " pts";
+    async function loadRewards() {
+      try {
+        const res = await fetch('/api/rewards');
+        if (res.ok) {
+          const data = await res.json();
+          if (data.success) {
+            const scoreEl = document.getElementById("score");
+            scoreEl.innerText = data.points;
+          }
+        }
+      } catch (e) {
+        console.error("Error fetching rewards:", e);
+      }
+    }
 
-// Affichage badges
-if (score >= 10) {
-  document.getElementById("badge1").classList.remove("locked");
-  document.getElementById("badge1").classList.add("unlocked");
-}
-if (score >= 50) {
-  document.getElementById("badge2").classList.remove("locked");
-  document.getElementById("badge2").classList.add("unlocked");
-}
-if (score >= 100) {
-  document.getElementById("badge3").classList.remove("locked");
-  document.getElementById("badge3").classList.add("unlocked");
-}
-if (score >= 200) {
-  document.getElementById("badge4").classList.remove("locked");
-  document.getElementById("badge4").classList.add("unlocked");
-}
-</script>
+    async function loadLeaderboard() {
+      try {
+        const res = await fetch('/api/rewards/leaderboard');
+        const data = await res.json();
+        const tbody = document.getElementById('leaderboardBody');
+
+        if (data.success && data.leaderboard.length > 0) {
+          tbody.innerHTML = data.leaderboard.map((u, index) => {
+            let rankIcon = '';
+            if (index === 0) rankIcon = '👑';
+            else if (index === 1) rankIcon = '🥈';
+            else if (index === 2) rankIcon = '🥉';
+            else rankIcon = `#${index + 1}`;
+
+            let rowStyle = "border-bottom:1px solid #eee;";
+            if (index === 0) rowStyle += " background-color: #fff8e1;";
+
+            return `
+                <tr style="${rowStyle}">
+                    <td style="padding:12px 8px;">
+                        <span style="display:inline-block; width:30px; font-weight:bold;">${rankIcon}</span>
+                        <span style="font-weight:600; color:#333;">${u.username}</span>
+                    </td>
+                    <td style="padding:12px 8px; text-align:right; font-weight:bold; color:#2c3e50;">${u.points} pts</td>
+                </tr>
+            `;
+          }).join('');
+        } else {
+          tbody.innerHTML = '<tr><td colspan="2" style="text-align:center; padding:20px;">No records yet</td></tr>';
+        }
+      } catch (e) {
+        console.error("Error loading leaderboard", e);
+        document.getElementById('leaderboardBody').innerHTML = '<tr><td colspan="2" style="text-align:center; padding:20px; color:red;">Error loading data</td></tr>';
+      }
+    }
+
+    loadRewards();
+    loadLeaderboard();
+  </script>
+
+
 
 </body>
+
 </html>

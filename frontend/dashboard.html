@@ -202,13 +202,22 @@
       updateSensorValues();
     }
 
-    // --- Sensor Logic ---
-    function updateSensorValues() {
+    // --- Sensor/Status Logic ---
+    async function updateSensorValues() {
       if (allRoomsElements.length === 0) return;
+
+      let realOccupancies = {};
+      try {
+        const res = await fetch('/api/rooms/status');
+        const data = await res.json();
+        if (data.success) {
+          realOccupancies = data.statuses;
+        }
+      } catch (e) { console.error("Error fetching room statuses:", e); }
 
       allRoomsElements.forEach(roomCard => {
         const roomId = roomCard.dataset.roomid;
-        const sensor = getSensorData(roomId); // Mock data
+        const sensor = getSensorData(roomId); // Mock data for Temp/Hum mainly
 
         const info = roomCard.querySelector('.room-info');
 
@@ -222,34 +231,50 @@
         humSpan.textContent = ` | Humidity: ${sensor.humidity}%`;
 
         // Occupancy / Status Logic
-        // PRIORITY: Schedule (Real) > Sensors (Mock)
+        // 1. Get Real Occupancy from DB
+        let currentOccupancy = realOccupancies[roomId] || 0;
 
+        // 2. Determine Status
         let status = 'free';
         let statusIcon = '🟢';
         let statusText = 'Free';
         let extraInfo = "";
 
-        // Check Real Schedule Status first
+        // Check if Schedule implies explicit class
         if (roomCard.dataset.realStatus === 'occupied') {
+          // It's occupied by a class
           status = 'occupied';
           statusIcon = '🔴';
           statusText = 'Occupied';
           extraInfo = roomCard.dataset.currentClass ? ` (${roomCard.dataset.currentClass})` : "";
-          // If supposed to be occupied, ensure occupancy > 0
-          if (sensor.occupancy < 5) sensor.occupancy = 10 + Math.floor(Math.random() * 20);
+
+          // If DB says 0 but class is on, we might wanna trust DB (maybe nobody came?) 
+          // OR assume people are there. 
+          // Requirement says "Occupancy rate" matches DB. So we show DB value.
+          // But status text can be "Occupied (Math)".
         } else {
-          // STRICT SYNC requested: If no class, it is FREE.
-          // Override random mock occupancy to 0 or very low to match "Free"
-          status = 'free';
-          statusIcon = '🟢';
-          statusText = 'Free';
-          sensor.occupancy = 0; // Force 0 people if no class
+          // No class. Check occupancy.
+          if (currentOccupancy > 0) {
+            if (currentOccupancy > 20) {
+              status = 'occupied';
+              statusIcon = '🔴';
+              statusText = 'Occupied';
+            } else {
+              status = 'partial';
+              statusIcon = '🟠';
+              statusText = 'Partial';
+            }
+          } else {
+            status = 'free';
+            statusIcon = '🟢';
+            statusText = 'Free';
+          }
         }
 
         // Update UI
         const occSpan = info.querySelector('.occ-span');
-        occSpan.textContent = `Occupancy: ${sensor.occupancy} | `;
-        roomCard.dataset.occupancy = sensor.occupancy;
+        occSpan.textContent = `Occupancy: ${currentOccupancy} | `;
+        roomCard.dataset.occupancy = currentOccupancy;
 
         const statusSpan = info.querySelector('.status');
         statusSpan.className = `status ${status}`;

@@ -10,6 +10,5 @@ services:
     environment:
       - FLASK_ENV=production
       - PYTHONUNBUFFERED=1
-    # Decommenter pour le développement (mises à jour en direct)
-    # volumes:
-    #   - .:/app
+    volumes:
+      - ./data:/app/data
