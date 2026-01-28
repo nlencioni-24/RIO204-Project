@@ -34,10 +34,22 @@ def authenticate(username, password, headless=True):
         options.add_argument('--disable-gpu')
         options.add_argument('--window-size=1920,1080')
         
-        driver = webdriver.Chrome(
-            service=Service(ChromeDriverManager().install()),
-            options=options
-        )
+        # Check for Docker environment variables
+        import os
+        chrome_bin = os.environ.get('CHROME_BIN')
+        chromedriver_path = os.environ.get('CHROMEDRIVER_PATH')
+
+        if chrome_bin and chromedriver_path:
+             # Docker / Manual config
+            options.binary_location = chrome_bin
+            service = Service(executable_path=chromedriver_path)
+            driver = webdriver.Chrome(service=service, options=options)
+        else:
+            # Local development (use webdriver_manager)
+            driver = webdriver.Chrome(
+                service=Service(ChromeDriverManager().install()),
+                options=options
+            )
         driver.implicitly_wait(10)
         
         # Navigation vers Synapses

@@ -1,0 +1,15 @@
+version: '3.8'
+
+services:
+  synapses-app:
+    build: .
+    container_name: synapses-scheduler
+    restart: unless-stopped
+    ports:
+      - "5001:5001"
+    environment:
+      - FLASK_ENV=production
+      - PYTHONUNBUFFERED=1
+    # Decommenter pour le développement (mises à jour en direct)
+    # volumes:
+    #   - .:/app
