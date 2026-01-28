@@ -33,3 +33,39 @@ python backend/api.py
 ```
 
 L'application sera accessible sur : http://localhost:5001
+
+
+### 4. Erreurs
+Erreur :
+```bash
+Erreur d'authentification: [WinError 193] %1 n’est pas une application Win32 valide
+your_IP_address - - [28/Jan/2026 11:36:41] "POST /api/auth/login HTTP/1.1" 401 -
+```
+
+Solution : 
+Use Chrome's built-in driver support (Recommended)
+Update headless_auth.py to handle Windows Chromedriver more reliably:
+```bash
+# Change this section in the authenticate function:
+else:
+    # Local development (use webdriver_manager)
+    driver = webdriver.Chrome(
+        service=Service(ChromeDriverManager().install()),
+        options=options
+    )
+```
+
+To: 
+```bash
+else:
+    # Local development (use webdriver_manager)
+    try:
+        driver = webdriver.Chrome(
+            service=Service(ChromeDriverManager().install()),
+            options=options
+        )
+    except Exception as e:
+        # Fallback: Try to use system Chrome without specifying chromedriver
+        print(f"Webdriver manager failed: {e}, trying system Chrome...")
+        driver = webdriver.Chrome(options=options)
+```
