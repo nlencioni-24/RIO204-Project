@@ -1,101 +1,387 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="fr">
 
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Login - Study Room Manager</title>
+    <title>Telecom Paris - Rooms & Reservations</title>
     <link rel="stylesheet" href="src/style.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
         body {
             display: flex;
             justify-content: center;
             align-items: center;
             min-height: 100vh;
-            background: #f0f2f5;
-            font-family: 'Segoe UI', sans-serif;
+            font-family: 'Inter', 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Animated background elements */
+        body::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle at 20% 50%, rgba(200, 30, 50, 0.08) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(200, 30, 50, 0.05) 0%, transparent 40%),
+                radial-gradient(circle at 40% 80%, rgba(255, 255, 255, 0.03) 0%, transparent 40%);
+            animation: backgroundPulse 15s ease-in-out infinite;
+        }
+
+        @keyframes backgroundPulse {
+
+            0%,
+            100% {
+                transform: translate(0, 0) rotate(0deg);
+            }
+
+            33% {
+                transform: translate(2%, 1%) rotate(1deg);
+            }
+
+            66% {
+                transform: translate(-1%, 2%) rotate(-1deg);
+            }
+        }
+
+        .login-wrapper {
+            position: relative;
+            z-index: 1;
+            width: 100%;
+            max-width: 440px;
+            padding: 20px;
         }
 
         .login-container {
-            background: white;
-            padding: 30px;
-            border-radius: 10px;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-            width: 100%;
-            max-width: 400px;
-            text-align: center;
+            background: rgba(255, 255, 255, 0.97);
+            padding: 50px 40px;
+            border-radius: 24px;
+            box-shadow: 0 25px 80px rgba(0, 0, 0, 0.35),
+                0 10px 30px rgba(0, 0, 0, 0.2),
+                inset 0 1px 0 rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(20px);
+            animation: slideUp 0.6s ease-out;
         }
 
-        .login-container h1 {
-            margin-bottom: 20px;
-            color: #333;
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .logo-section {
+            text-align: center;
+            margin-bottom: 35px;
+        }
+
+        .logo-section img {
+            width: 100%;
+            max-width: 320px;
+            height: auto;
+            margin-bottom: 15px;
+            filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.08));
+        }
+
+        .divider {
+            width: 60px;
+            height: 3px;
+            background: linear-gradient(90deg, #c81e32, #e63946);
+            margin: 0 auto;
+            border-radius: 2px;
+        }
+
+        .welcome-text {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .welcome-text h2 {
+            font-size: 22px;
+            font-weight: 600;
+            color: #1a1a2e;
+            margin-bottom: 8px;
+        }
+
+        .welcome-text p {
+            font-size: 14px;
+            color: #666;
+            font-weight: 400;
         }
 
         .form-group {
-            margin-bottom: 15px;
-            text-align: left;
+            margin-bottom: 22px;
+            position: relative;
         }
 
         .form-group label {
             display: block;
-            margin-bottom: 5px;
-            color: #666;
+            margin-bottom: 8px;
+            font-size: 13px;
+            font-weight: 500;
+            color: #444;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .input-wrapper {
+            position: relative;
+        }
+
+        .input-wrapper svg {
+            position: absolute;
+            left: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 20px;
+            height: 20px;
+            color: #999;
+            transition: color 0.3s;
         }
 
         .form-group input {
             width: 100%;
-            padding: 10px;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-            font-size: 16px;
+            padding: 16px 16px 16px 50px;
+            border: 2px solid #e8e8e8;
+            border-radius: 12px;
+            font-size: 15px;
+            font-family: inherit;
+            background: #fafafa;
+            transition: all 0.3s ease;
+            color: #333;
         }
 
-        button {
+        .form-group input::placeholder {
+            color: #aaa;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #c81e32;
+            background: #fff;
+            box-shadow: 0 0 0 4px rgba(200, 30, 50, 0.1);
+        }
+
+        .form-group input:focus+svg,
+        .form-group input:focus~.input-wrapper svg {
+            color: #c81e32;
+        }
+
+        .input-wrapper:has(input:focus) svg {
+            color: #c81e32;
+        }
+
+        .login-btn {
             width: 100%;
-            padding: 12px;
-            background-color: #4CAF50;
+            padding: 16px 24px;
+            background: linear-gradient(135deg, #c81e32 0%, #a01729 100%);
             color: white;
             border: none;
-            border-radius: 5px;
+            border-radius: 12px;
             font-size: 16px;
+            font-weight: 600;
+            font-family: inherit;
             cursor: pointer;
             margin-top: 10px;
-            transition: background 0.3s;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+            text-transform: uppercase;
+            letter-spacing: 1px;
         }
 
-        button:hover {
-            background-color: #45a049;
+        .login-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: left 0.5s;
         }
 
-        button:disabled {
-            background-color: #ccc;
+        .login-btn:hover::before {
+            left: 100%;
         }
 
-        .error {
-            color: red;
-            margin-top: 10px;
+        .login-btn:hover {
+            background: linear-gradient(135deg, #d42540 0%, #b01830 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(200, 30, 50, 0.35);
+        }
+
+        .login-btn:active {
+            transform: translateY(0);
+        }
+
+        .login-btn:disabled {
+            background: linear-gradient(135deg, #ccc 0%, #aaa 100%);
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .login-btn:disabled::before {
+            display: none;
+        }
+
+        .error-message {
+            background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+            border: 1px solid #fca5a5;
+            color: #b91c1c;
+            padding: 14px 16px;
+            border-radius: 10px;
+            margin-top: 20px;
             font-size: 14px;
             display: none;
+            animation: shake 0.4s ease-in-out;
+            text-align: center;
+        }
+
+        @keyframes shake {
+
+            0%,
+            100% {
+                transform: translateX(0);
+            }
+
+            25% {
+                transform: translateX(-5px);
+            }
+
+            75% {
+                transform: translateX(5px);
+            }
+        }
+
+        .footer-text {
+            text-align: center;
+            margin-top: 30px;
+            padding-top: 25px;
+            border-top: 1px solid #eee;
+        }
+
+        .footer-text p {
+            font-size: 12px;
+            color: #888;
+        }
+
+        .footer-text a {
+            color: #c81e32;
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        .footer-text a:hover {
+            text-decoration: underline;
+        }
+
+        /* Loading spinner for button */
+        .loading-spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 0.8s linear infinite;
+            margin-right: 10px;
+            vertical-align: middle;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 480px) {
+            .login-container {
+                padding: 40px 25px;
+                border-radius: 20px;
+            }
+
+            .logo-section img {
+                max-width: 260px;
+            }
+
+            .welcome-text h2 {
+                font-size: 20px;
+            }
+
+            .form-group input {
+                padding: 14px 14px 14px 45px;
+            }
         }
     </style>
 </head>
 
 <body>
 
-    <div class="login-container">
-        <h1>Login</h1>
-        <form id="loginForm">
-            <div class="form-group">
-                <label for="username">Username (Telecom Paris)</label>
-                <input type="text" id="username" name="username" required placeholder="e.g. amellier">
+    <div class="login-wrapper">
+        <div class="login-container">
+            <div class="logo-section">
+                <img src="assets/logo-telecom.png" alt="Telecom Paris - Rooms & Reservations">
+                <div class="divider"></div>
             </div>
-            <div class="form-group">
-                <label for="password">Password</label>
-                <input type="password" id="password" name="password" required placeholder="Password">
+
+            <div class="welcome-text">
+                <h2>Bienvenue</h2>
+                <p>Connectez-vous avec votre compte Telecom Paris</p>
             </div>
-            <button type="submit" id="loginBtn">Sign In</button>
-            <div id="errorMsg" class="error"></div>
-        </form>
+
+            <form id="loginForm">
+                <div class="form-group">
+                    <label for="username">Identifiant</label>
+                    <div class="input-wrapper">
+                        <input type="text" id="username" name="username" required placeholder="Username">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                            <circle cx="12" cy="7" r="4"></circle>
+                        </svg>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="password">Mot de passe</label>
+                    <div class="input-wrapper">
+                        <input type="password" id="password" name="password" required placeholder="Password">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                            <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                        </svg>
+                    </div>
+                </div>
+
+                <button type="submit" id="loginBtn" class="login-btn">Se connecter</button>
+
+                <div id="errorMsg" class="error-message"></div>
+            </form>
+
+            <div class="footer-text">
+                <p>En vous connectant, vous acceptez les <a href="#">conditions d'utilisation</a></p>
+            </div>
+        </div>
     </div>
 
     <script type="module">
@@ -117,7 +403,7 @@
             const err = document.getElementById('errorMsg');
 
             btn.disabled = true;
-            btn.textContent = 'Logging in...';
+            btn.innerHTML = '<span class="loading-spinner"></span>Connexion...';
             err.style.display = 'none';
 
             const result = await login(user, pass);
@@ -126,8 +412,8 @@
                 window.location.href = 'dashboard.html';
             } else {
                 btn.disabled = false;
-                btn.textContent = 'Sign In';
-                err.textContent = result.message || 'Login failed';
+                btn.textContent = 'Se connecter';
+                err.textContent = result.message || 'Échec de la connexion';
                 err.style.display = 'block';
             }
         });
