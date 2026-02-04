@@ -1,3 +1,5 @@
+**The latest version is available in the synamic_rankink branch**
+
 # Synapses Room Scheduler
 
 Application Web permettant de consulter les emplois du temps des salles de Télécom Paris.
